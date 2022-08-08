@@ -1,0 +1,53 @@
+Avant-Propos :
+
+Conteneur : virtualisation de niveau systeme d'exploitation
+Hyperviseur/VM : virtualisation au niveau materiel
+
+Contrairement a une VM, un conteneur n'embarque pas d'OS complet
+
+1. Conteneurs et le cas Docker
+1.1 La conteneurisation
+
+Dans une architecture a base de conteneurs :
+- Le contenu du conteneur, cad le code et ses dependances (jusqu'a l'OS) est de la responsabilite du dev
+- La gestion du conteneur et les dependances avec l'infra sont de la responsabilite de l'exploitant
+
+Virtualisation materielle : chaque logiciel se trouve dans un sandox
+- Poids d'une VM important
+- Elle ne laisse pas a l'exploitant la possibilite de choisir librement les caracteristiques comme le stockage ou le nombre de CPU...
+
+Architecture a base de conteneur : compromis
+- Isolation presente
+- Conteneur s'appuie sur le kernel de l'OS hote, il est donc leger. Un hote peut executer beaucoup plus de conteneurs que d'equivalent VM
+
+Eventuellement, conteneurs dans une VM permet de se premunir des MAJ de l'OS hote qui pourraient impacter les conteneurs.
+Il existe des projets visant a fournir des OS hotes minimaux qui se focalisent uniquement sur les problemes d'infra. Cela limite les risques d'attaques et de bug.
+
+Docker apporte 2 avantages aux solutions a base de conteneurs :
+- Possibilite de decrire formellement comment construire le conteneur
+- Format d'image standardisee
+
+1.2 Les fondations : Linux, cgroups et namespaces
+
+Docker est une solution open-source de conteneur Linux.
+Initialement, s'appuie sur LXC (Linux Containers) pour implementation, puis libcontainer (bibli bas niveau) puis runC, standard de l'OCI (Open Container Initiative).
+Docker aujourd'hui construit au-dessus de containerd qui s'appuie sur runC.
+
+Contaitneurs sont une techno liee au noyau Linux (Linux Kernel) et certains de ses services sont orchestree par containerd.
+
+Depuis 2016, possibilite d'executer des conteneurs natif sous windows grace au portage de runC sur le noyau Windows.
+
+Pour executer des conteneurs Linux sous Windows, on fait tourner une VM Hyper-V avec OS LinuxKit LCOW (Linux Containers On Windows) et le conteneur a l'interieur.
+Idem sous Mac, on fait tourner une VM basee sur l'Hypervisor Framework Apple : Xhyve
+
+CGroups : (Control Groups)
+Permet de partitionner les ressources d'un hote pour controler la consommation des ressources process par process
+Introduit la notion de controleur avec pour objectif de controler acces a une ressource pour une hierarchie de process
+
+Namespaces : Permet de faire en sorte que les processus ne voient pas les ressources utilisees par d'autres.
+Version amelioree de chroot : Le process aura l'impression d'etre a la racine du systeme. Namespace etend le concept a d'autres ressources (Com interprocess, Terminaux resaux, point de montage systeme etc...)
+
+(!)
+Un conteneur est un systeme de fichier sur lequel s'executent des process (de preference 1 par conteneur) de facon :
+- contrainte : grace a cgroups qui specifie les limites en termes de ressources
+- isolee : grace a namespaces qui fait en sorte que les conteneurs ne se voient pas les uns les autres
