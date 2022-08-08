@@ -51,3 +51,132 @@ Version amelioree de chroot : Le process aura l'impression d'etre a la racine du
 Un conteneur est un systeme de fichier sur lequel s'executent des process (de preference 1 par conteneur) de facon :
 - contrainte : grace a cgroups qui specifie les limites en termes de ressources
 - isolee : grace a namespaces qui fait en sorte que les conteneurs ne se voient pas les uns les autres
+
+1.3 Les apports de Docker : Structure en couches, images, volumes et registery
+
+Docker optimise la taille des conteneurs :
+Construire un conteneur a la main : Operation fastidieuse et probleme de distribution et reutilisation
+(!)
+Par exemple stocker les fichiers specifiques au conteneur qui ne font pas partie de l'OS dans un repertoire
+Apport essentiel de Docker : les images, qui sont une maniere de conditionner le contenu d'un conteneur en blocs reutilisables et echangeables.
+
+Possible grace a l'union file system :
+Chaque couche surcharge la precedente en y apportant de modifications et ajouts.
+On a plusieurs couches successives qui sont autant de blocs reutilisables.
+
+Docker Hub et registry :
+Le registry est l'annuaire et le centre de stockage des images reutilisables.
+Docker Hub est sa principale instanciation publique
+Le registry Docker herberge les images de base de principaux systemes d'exploitation (Ubuntu, Debian ...) et de nombreux logiciels courants (bdd, serveurs d'appli etc...)
+Le registry peut etre au choix :
+- Le lieu de stockage d'images crees sur un hote par un dev (docker push)
+- La source d'images a installer sur un ou plusieurs hotes (docker pull)
+(!)
+Certaines images peuvent rester privees et ne pas etre publiees sur un registry : ces images restent au niveau du cache de l'hote
+
+Reutilisation des images de 2 manieres :
+- A l'echelle d'un hote, via un cache local
+- A l'echelle d'un registry, en offrant un moyen de partage d'images
+
+Copy on write, persistance des volumes :
+
+A un moment, l'image d'un conteneur va etre mise en route (execution de process qui consomment de la memoire, ecrire des donnees etc...)
+Les donnes sont produites dans une couche au dessus de toutes les autres, la container layer.
+Cette couche est modifiable contrairement aux couches d'image qui ne le sont pas.
+Le Copy On Write : Lorsqu'une modification est demandee sur un element de l'image, le fichier original est copie te la nouvelle version surchage l'originale.
+Le COW n'est utilise que lors d'une modification, sinon c'est la version originale de l'image qui est utilisee.
+La couche du conteneur ne contient que le differentiel par rapport a l'image.
+(!)
+La maniere de gerer le COW et l'union des couches depend du storage driver. Docker est livre avec un driver par defaut adapte a l'OS.
+
+Quand le conteneur s'arrete, la container layer est perdue. Pour conserver des donnees -> volumes.
+Les volumes sont des espaces de donnees qui court-circuitent le system d'union file. Ils sont modifies directement et les donnees qui y sont inscrites survivent a l'arret du conteneur.
+Ce sont des systemes de fichiers montes dans le conteneur :
+(!)
+- Sur un espace disque de l'hote gere par Docker
+- Sur un repertoire de l'hote directement monte dans le conteneur
+
+1.4 Les outils de l'ecosysteme des conteneurs :
+
+Les moteurs :
+Le moteur d'execution de conteneur (par exemple Docker Engine) offre des fonctionnalites de plus haut niveau par rappoort a Cgroups et Namespace :
+- une CLI
+- des API
+- Capacite de nommer, decouvrir et gerer le cycle de vie des conteneurs
+- La capacitee de creer des conteneurs a partir d'images ou de modeles
+
+Il existe d'autres type de moteur que le Docker Engine :
+- LXC sur lequel Docker s'appuyait avant la libcontainer
+- Containerd, basee sur runC (composant de bas niveau destine a s'integrer dans des moteurs de plus haut niveau)
+- Podman
+
+Le standard OCI (Open Container Initiative) pour les images ou CRI (Container Runtime Interface) pour Kubernetes impose un standard qui assure portabilite entre les environnements et les moteurs.
+Docker reste l'outil de reference pour les dev, mais n'est plus le leader cote serveur.
+
+OS specialises :
+Les conteneurs reutilisent le noyau de l'OS de l'hote sur lequel ils tournent.
+Les containers OS sont des OS simplifies, plus performants et moins exposes aux risques de securite ou d'instabilite
+Exemples :
+- Fedora CoreOS pour Redhat
+- LinuxKit qui permet de creer des distro Linux compactes (dont LCOW qu'utilise window au sein de sont hyper-v)
+etc...
+
+Pour Windows :
+- Windows Server Core pour les hotes qui n'executent que des machines virtuelles ou des conteneurs
+- Windows Nano Server pour l'image de base de conteneurs Windows
+
+Outils d'orchestration :
+Les bonnes pratiques en matiere d'architecture consistent a distribuer les processus dans plusieurs conteneurs.
+(!)
+Il faudra donc les associer, c'est la composition :
+- Definir l'ordre de demarrage.
+- Definier les systemes de fichier persistants (volumes)
+- Definir les liens reseau que les conteneurs vont entretenir entre eux
+On peut demarrer les conteneurs a la main avec un script qui execute des docker run, mais on ne peut pas distribuer la charge dans ce cas.
+Il faut que le composition s'effectue en collaboration avec les outils de clustering reseau qui vont abolir les frontieres entre les differents hotes.
+C'est l'orchestration : Composition + clustering
+
+DCOS : Data Center OS
+Solution de haut niveau pour orchestration. Le standard est Kubernetes.
+
+2. Orchestration de conteneurs.
+2.1 Automatiser la gestion de l'infra : du IaaS au CaaS
+
+IaaS : Virtualisation d'infra
+Les solutions IaaS offrent aux appli conditionnes sous forme d'images de machines virtuelles des services d'infrastructure : Puissance de calcul, stockage, services reseau, securitee.
+Les solutions IaaS vont detecter les failles materielles et s'assurer que l'environnement d'exe est toujours actif.
+
+En mode IaaS, le dev doit specifier ses besoin en matiere d'environnement d'exe :
+Dialogue pousse entre le dev et l'exploitant.
+Le dev specifie ses besoins (version java, bdd, server d'appli...) et l'exploitant les interprete.
+Phase sensible et complexe.
+
+Apres avoir produit et conditonne sont code (build et packaging) le dev donne son paquet logiciel a l'exploitant.
+Il doit rester coherent avec l'archi de la solution.
+La gestion de la solution de deploiement est la responsabilite de l'exploitant.
+
+Iaas:
+Apporte solution sur preparation environnement applicatif :
+- Automatisation du provisionnement de l'infra. Tout se fait par config, si capactite dispo (Pas besoin pour client d'acheter des serveurs etc...)
+- Maniere simple de monter en charge si l'appli le permet : On redimensionne l'environnement en ajoutant CPU, RAM etc...
+
+Ne donne pas de solution pour :
+- Deploiement des applis (Installation et mise en route une fois la VM cree)
+- Description formelle des caracteristiques d'evolutivite et de resilience de l'appli a faire par le dev et l'execution en prod.
+
+Apport du deploiement en CaaS :
+Les phases de preparation de l'env et le deploiement sont indistinctes :
+- L'image de conteneur inclue l'environnement d'exe (runtime) en meme temps que le code.
+- Si usage Docker, via image, le paquet logiciel est exactement ce qui va etre deploye.
+Il n'y a pas de retraitement de l'image par une solution tierce.
+Comme un conteneur physique, l'exploitant est comme un transporteur : il choisit la maniere dont le conteneur va etre execute sans l'alterer.
+
+De plus, les sulitions CaaS associent au deploiement des regles de gestion (sous forme de fichier YAML ou JSON).
+Cette config va specifier de facon formelle les carac non fonctionnelles de l'archi : nombre d'instance, liens en conteneurs, regles de montee en charge et repartition...
+
+Une appli doit etre developpee des le debut pour etre container-ready en revanche
+
+Carc communes des solutions CaaS :
+- Moteur de de conteneurs : Conteneurd (ou Docker Engine)
+- Fonctions de clustering et d'orchestration
+- Principe de gestion automatisee de l'infra
