@@ -1,0 +1,50 @@
+docker run -d --name web-server -ti -p 8090:80 nginx
+
+-d : detached mode
+-t : open a pseudo tty
+-i : stdin is open event is container is detached
+-p : publish hostport:containerport
+
+socat :
+socat -v UNIX-LISTEN:/tmp/socatproxy.sock,fork,reuseaddr UNIX-CONNECT:/var/run/docker.sock &
+
+docker -H unix:///tmp/socatproxy.sock ps -a
+
+-H to specify host
+
+Stop docker deamon :
+LINUX
+sudo systemctl stop docker
+MACOS
+launchctl list | grep docker
+launchctl stop XXXXXX
+
+Lancer docker deamon sur un socket particulier
+LINUX
+sudo dockerd -H tcp://0.0.0.0:2375 &
+MACOS
+Ne fonctionne pas. Faire plutot :
+socat -d -d  TCP-LISTEN:2375,fork UNIX-CLIENT:/var/run/docker.sock
+(socat TCP-LISTEN:2375,range=127.0.0.1/32,reuseaddr,fork UNIX-CLIENT:/var/run/docker.sock
+docker -H 0.0.0.0:2375 info
+On va ainsi rediriger les connexion TCP sur 2375 vers le socket de docker
+
+export DOCKER_HOST="tcp://0.0.0.0:2375" -> inutile du coup
+curl http://localhost:2375/info |jq pour avoir les infos du daemon une fois la redirection faite
+
+Listing des ports :
+Linux : netstat -pant
+Macos : netstat -anp tcp
+
+Fichier de config du daemon :
+Linux : 
+/usr/lib/systemd/system/docker.service
+Macos :
+~/.docker/daemon.json
+Mais Attention : si config de listen de connexion via systemd ET le .json -> conflit !!!
+Configurer le tableau dans le json pour ajouter un port d'ecoute
+ "hosts": ["unix:///var/run/docker.sock", "tcp://127.0.0.1:2375"]
+ (ATTENTION, BIEN AJOUTER LA VIRGULE APRES LA PRECEDENTE VARIABLE)
+
+Restart docker a la bourring
+killall Docker && open /Applications/Docker.app 

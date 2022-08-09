@@ -283,3 +283,24 @@ Les solutions CaaS et les gestion de conf type Ansible sont donc complementaires
 Par exemple Ansible va permettre installation et config des agents CaaS (ex: Kublets) sur les hotes
 Ansible dispose d'un playbook docker par ex.
 Ansible va gerer cycle de vie du conteneur, depuis chargement image jusqu'a creation et demarrage
+
+3. Prise en main
+3.2 Installation Docker
+
+docker run -d --name web-server -ti -p 8090:80 nginx
+
+man pages :
+git clone https://github.com/docker/docker-ce
+in components/cli
+make -f docker.Makefile manpages
+cp -R du dossier man vers un endroit desire
+echo "MANPATH $PWD/man" | sudo tee -a /private/etc/man.conf
+rm du repo
+
+3.3 Premier conteneur
+Client Docker :
+
+Socket : ensemble normalise de fonctions de com. Permettent a une appli de se brancher a un reseau et communiquer avec une autre appli
+Socket Unix : Moyen de communication inter-processus utilisant le system de fichier comme espace de nommage. Plus facile qu'avec des simples pipes dans le cas de plusieurs client accedant a un meme service
+
+Socat
