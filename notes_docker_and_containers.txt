@@ -176,7 +176,110 @@ Cette config va specifier de facon formelle les carac non fonctionnelles de l'ar
 
 Une appli doit etre developpee des le debut pour etre container-ready en revanche
 
-Carc communes des solutions CaaS :
-- Moteur de de conteneurs : Conteneurd (ou Docker Engine)
+Carac communes des solutions CaaS :
+- Moteur de de conteneurs : Conteneurd en general (ou Docker Engine)
 - Fonctions de clustering et d'orchestration
-- Principe de gestion automatisee de l'infra
+- Principe de gestion automatisee de l'infra (homeostasie)
+
+Regulation homeostatique : toutes les solutions CaaS ont ces composants en commun avec pour but :
+- Surveiller etat du systeme
+- Detecter les ecarts par rapport au regles de gestion programmees
+- Prendre des mesures pour ramener l'equilibre
+- Prevenir l'exploitant en cas d'echec.
+
+System de regulation:
+- Controleur qui analyse l'etat de l'infra via les donnees remontees par les agents. Il donne des ordres aux agents.
+- Agents qui collectent des infos sur l'etat des noeuds (le feedback) et servent de relais au controleur pour executer les actions correctrices.
+- Une interface d'entree de regles de gestion : une CLI generalement (entree directe ou fichier conf)
+
+L'exploitant programme les regles de gestion (sur la base de proposition du dev)
+Ces regles de gestion persistent pendant tout le cycle de l'appli.
+
+DCOS :
+Les conteneurs et les Caas sont au coeur des DCOS mais n'en sont qu'une compostante.
+Les DCOS doivent etre capables de gerer differents types de ressources et pas juste de conteneurs
+
+2.2 Les solutions CaaS
+
+Kubernetes :
+Projet Open Source initie par Google.
+Pour info, la plupart des technos de base des conteneurs (Cgroups et Namespaces) ont ete elaborees par des ingenieurs Google.
+Kubernetes gere par la Linux Foundation
+
+Archi Kubernetes :
+- Controleur central : Kubernetes Control Plane. Peut stocker sa conf dans un cluster etcd.
+- Des nodes : Hebergent les agents Kubernetes, les kubelets, et les conteneurs organises en pod.
+Les kubelets sont les agents qui controlent les conteneurs organises en pod. Ils surveillent leur etat en utilisant cAdvisor qui est en lien avec le moteur de conteneur.
+Le node contient egalement un kube-proxy : proxy repartiteur de charge (load balancer) pour les services offerst par les pods, uniquement au sein d'un cluster Kubernetes.
+
+Le Kubernet Controle Pane subdivise en :
+- Serveur API, utilise par Kubctl, la CLI qui permet de piloter les composants de l'archi
+- Le Scheduler : pour provisionner de nouveaux pools de conteneurs sur les noeuds
+- Le Controller Manager : Execute les boucles de controle
+
+Nodes, pods et conteneurs :
+Un node correspond en general a un hote physique ou virtuel
+Un pod est un groupe de conteneurs toujours colocalises et provisionnes ensembles. Ils sont lies les uns aux autres et offrent une instance de micro-service
+(!)
+Tous les conteneurs d'un pod se trouvent dans une meme machine logique :
+- Partagent les meme volumes
+- Peuvent interagir en utilisant le nom de domaine localhost ce qui simplifie les interacitons
+Chaque pod est associe a une IP unique. L'espace d'adressage a l'interieur d'un cluster est plat (pod peuvent se parler sans recours a la NAT)
+
+Un service est un ensemble de pods associes a des regles d'acces, de replication et de repartition de charges specifiques
+La notion de service interne au cluster : le kube-proxy permet a un pod front-end de trouver un pod back-end en utilisant des regles de repartition de charge.
+En revanche, si un utilisateur exterieur veut acceder au front-end, on utilise un external load-balancer qui sera associe a une IP publique et offrira chiffrement SSl, load balancing niveau 7, affinite session etc...
+L'implementation open source de l'external load balancer est basee sur NGINX
+
+Toute solution d'orchestration de conteneur se doit de supporter Kubernetes
+
+Modele Docker Entreprise : echec commercial
+- Docker Compose :  encore beaucoup utilise par les dev comme outils de composition de conteneurs
+- Docker Classic Swarm : Offre de clustering concurrente de Kubernetes. Transformait plusieurs machines en 1 seul hote.
+- Docker Trusted Registry : Stockage des images conteneurs
+- Docker UCP (Universal Control Pane) : Centre de control Datacenter
+
+Une des strategies de swarm etait spread : lors de la creation d'un certain nombre de conteneurs, la strategie s'assurait que les creations etaient distribuees uniformement sur chaque noeud d'un cluster
+
+DCOS :
+Apache Mesos est a l'origine.
+Concept de Framework, qui permet de se brancher sur diverses solution de controle, dont Kub.
+Architecture : des mesos master (eventuellement dupliques, comme des master nodes) et des mesos slaves qui hebergent les agents emis depuis le master et fournir des infos
+Mesos peut utiliser d'autres techo de deploiement et d'exe.
+
+Openshift de Red Hat : Solution de reference de Kubernetes pour une installation privee
+Contruite en integrant les produits CoreOS
+
+Nomad de HashiCorp :
+Etend la gestion de process distribues au dela des conteneur (a la maniere de Mesos)
+Permet transition entre ancien monde et celui des conteneurs et du multi-conteneur mono-hote vers le multi-multi
+
+Les 3 plus grosses offres de cloud container service :
+- Google Kubernetes Engine
+- Azure Kubernets Service
+- Amazon ECS
+
+Ansible, Chef, Puppet : lien avec Docker et Caas
+
+Les solutions CaaS sont nouveaute sur marche gestion d'infra. La plupart des service IT doivent composer avec un existant qui a large panel de techno.
+Le but de ces solutions est d'unifier la gestion de configuration d'infra informatiques.
+Elle se basent sur un DSL (Domain Specific Language) pour declarer la conf cible a atteindre.
+Ces solutions visent a remplacer les nombreux scripts shell par une bibliotheque d'actions standardisees.
+Cela permet de s'abstraire des evolutions techno. et surtout de simplifier l'elaboration de procedures de conf independantes des environnements.
+
+Exemple : Ansible de Red Hat
+Uniquement besoin du logiciel sur la machine de controle, pas besoin d'agents sur les machines qui doivent etre config : uniquement SSH et python
+Playbook : descripteurs de config. Decrit l'etat souhaite pour un ou plusieurs hotes
+Inventory : liste des hotes cibles, qui peuvent etre machines virtuelles
+Les hotes cibles sont organises en groupes, ce qui permet de lancer des actions de masse
+
+Playbook : par exemple au format YAML. C'est une description d'un etat souhaite, pas une liste de commandes.
+Ansible collecte, avant d'effectuer des actions, des infos relatives a l'environnement de la machine (les facts)
+
+Lien avec Docker et les solutions CaaS :
+Comme les Caas, Ansible fonctionne en comparant une etat actuel avec un etat cible.
+La difference est que la comparaison d'etat n'est pas permanente : on veut juste configurer un systeme et non pas le gerer en temps reel.
+Les solutions CaaS et les gestion de conf type Ansible sont donc complementaires.
+Par exemple Ansible va permettre installation et config des agents CaaS (ex: Kublets) sur les hotes
+Ansible dispose d'un playbook docker par ex.
+Ansible va gerer cycle de vie du conteneur, depuis chargement image jusqu'a creation et demarrage
