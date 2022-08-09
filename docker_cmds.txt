@@ -45,6 +45,7 @@ Mais Attention : si config de listen de connexion via systemd ET le .json -> con
 Configurer le tableau dans le json pour ajouter un port d'ecoute
  "hosts": ["unix:///var/run/docker.sock", "tcp://127.0.0.1:2375"]
  (ATTENTION, BIEN AJOUTER LA VIRGULE APRES LA PRECEDENTE VARIABLE)
+ (Ne fonctionne quand meme pas sous Macos)
 
 Restart docker a la bourring
 killall Docker && open /Applications/Docker.app 
