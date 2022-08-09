@@ -24,8 +24,9 @@ LINUX
 sudo dockerd -H tcp://0.0.0.0:2375 &
 MACOS
 Ne fonctionne pas. Faire plutot :
-socat -d -d  TCP-LISTEN:2375,fork UNIX-CLIENT:/var/run/docker.sock
-(socat TCP-LISTEN:2375,range=127.0.0.1/32,reuseaddr,fork UNIX-CLIENT:/var/run/docker.sock
+socat -d -d  TCP-LISTEN:2375,fork,reuseaddr UNIX-CLIENT:/var/run/docker.sock (attention, toutes les ip)
+(socat TCP-LISTEN:2375,range=127.0.0.1/32,reuseaddr,fork UNIX-CLIENT:/var/run/docker.sock)
+(socat TCP-LISTEN:2375,bind=127.0.0.1,reuseaddr,fork UNIX-CLIENT:/var/run/docker.sock)
 docker -H 0.0.0.0:2375 info
 On va ainsi rediriger les connexion TCP sur 2375 vers le socket de docker
 
@@ -49,3 +50,4 @@ Configurer le tableau dans le json pour ajouter un port d'ecoute
 
 Restart docker a la bourring
 killall Docker && open /Applications/Docker.app 
+
