@@ -287,20 +287,200 @@ Ansible va gerer cycle de vie du conteneur, depuis chargement image jusqu'a crea
 3. Prise en main
 3.2 Installation Docker
 
-docker run -d --name web-server -ti -p 8090:80 nginx
+Docker Desktop :
+- Docker Engine : Deamon et client docker
+- Docker Compose
+- Kubernetes monoposte
 
-man pages :
-git clone https://github.com/docker/docker-ce
-in components/cli
-make -f docker.Makefile manpages
-cp -R du dossier man vers un endroit desire
-echo "MANPATH $PWD/man" | sudo tee -a /private/etc/man.conf
-rm du repo
+Une VM est cree qui fait tourner le deamon docker Linux qui peut etre controle :
+- Via le client docker
+- Via des requetes HTTP (API REST)
 
 3.3 Premier conteneur
+On peut interagir avec le daemon docker :
+- Interface graphique sous Windows/Macos
+- Ligne de commande Docker
+- Appels HTTP via l'API Docker Remote
+
 Client Docker :
 
 Socket : ensemble normalise de fonctions de com. Permettent a une appli de se brancher a un reseau et communiquer avec une autre appli
 Socket Unix : Moyen de communication inter-processus utilisant le system de fichier comme espace de nommage. Plus facile qu'avec des simples pipes dans le cas de plusieurs client accedant a un meme service
 
-Socat
+Le deamon docker ecoute sur un socket Unix a l'addresse /var/run/docker.socket.
+Le client Docker utilise HTTP pour envoyer des commandes a ce socket qui sont transmises ensuite au deamon via HTTP
+
+Socat utile pour lire les trames HTTP d'envoi.
+
+Le client et le deamon Docker ont besoin de tourner avec les droits root pour monter des volumes par exemple. Les utilisateurs faisant partie du groupe docker pourront utiliser docker sans la commande sudo
+
+Le deamon expose l'integralite de ses methodes via l'API Docker Remote. On peut l'appeler via curl ou wget.
+Il faut pour cela ajouter un autre socket de connexion TCP que le deamon docker va ecouter en plus du socket unix
+
+Fichier de conf pour modifier les parametres de demarrage du deamon :
+/usr/lib/systemd/system/docker.service
+
+4.Conteneurs et images
+4.1 Cycle de vie du conteneur
+
+create
+start
+stop : sigterm puis sigkill si besoin
+kill : sigkill
+rm
+run = create + start
+
+l'UUID court ou le nom peuvent etre utilises pour travailler sur un conteneur
+
+docker stop :
+L'image plus la container layer (couche persistance read/write) sont toujours presentes
+
+4.2 Acceder au conteneur et modif ses donnees
+
+Connexion mode terminal :
+docker exec -t -i nom_conteneur /bin/bash
+Le nom de l'hote sera l'UUID court du conteneur
+
+Volumes :
+Un moyen de Docker pour gerer la persistance des donnes au sein des conteneurs
+
+Pour ajouter un volume simplement :
+-v chemin_absolu_dossier_dans_conteneur
+docker inspect pour voir ou il est monte sur l'hote
+Pb :
+- Besoin privileges etendu (root) pour acceder donnees sur hote
+- Destruction/Creation Conteneur va entrainer allocation nouveau volume. Volume precedent sera orphelin
+
+Monter un repertoire de l'hote dans le conteneur :
+-v repertoire_hote:repertoire_conteneur
+Possibilite de monter en lecture seule avec :ro
+
+Config de ports IP :
+-p pour preciser
+-P pour que Docker choisisse des ports libre au hasard sur la machine hote
+
+4.3 Contruire image docker originale
+
+docker images pour lister les images presentes sur la machine
+docker rmi pour supprimer une image
+
+Images sans nom sont des images intermediaires
+
+Recuperer une image a partir du docker hub :
+docker pull img_name:tag
+
+Creer une image a partir d'un contenuer :
+docker commit nom_conteneur tag_image
+
+4.4 Dockerfile
+Permet de regler le probleme du processus de creation de l'image qui n'est pas normalisee
+
+Dockerfile : creation d'images de maniere formelle
+
+docker build -t tag_image
+
+Pour heriter d'une image :
+FROM img:tag
+
+Pour ajouter un fichier :
+COPY fichier_hote fichier_conteneur
+Celui ci ne modifiera pas l'image de base, via l'Union File System, il sera pris en compte a la place
+Cela constituera une couche en plus de l'UFS (cad une image intermediaire)
+
+Image finale est constituee de serier d'images originales ou heritees.
+docker history pour visualiser ensembles des couche d'une image
+
+5. Apprendre Docker
+5.1 Intro CLI docker
+
+Variables d'env Docker :
+Modifie le comportement des commandes docker.
+ex : DOCKER_CONFIG qui donne l'emplacement du fichier de config.
+Possibilite de definir un fichier de config perso
+
+Option des commandes :
+Si booleen non precise, il est a true
+
+Bonne pratique : utiliser = que pour les options de type booleen
+
+5.2 Commandes systeme
+Commandes relatives au Docker Engine : pilotage ou obtention d'infos
+
+dockerd : controle le daemon Docker
+Il est demarre automatiquement
+
+docker info : visualiser infos sur config docker
+docker version : version client (cli) et serveur (deamon)
+docker stats : comme un top sous linux, donne infos sur conteneurs executes
+-a pour tous les conteneurs meme arretes, --no-stream pour un snapshot
+docker ps : liste les conteneurs actifs
+-a pour tous, -q pour quiet, --format ou --filter pour des options affichage
+docker events : afficher les evenements qui se produisent sur le bus d'evenement docker
+A la maniere d'un cat -f
+docker inspect : recuperer sous former json les metadonnes d'un objet docker (image, conteneur ...)
+docker df : obtenir les infos de l'espace disque utilise par le deamon docker
+docker system prune / docker image prune : supprimer les conteneurs et reseaux non utilisee
+supprimer egalement les images sans nom (dangling)
+-a pour supprimer images non utilisees
+--volumes pour supprimer volumes non attaches a des conteneurs
+
+5.3 Cycle de vie conteneurs
+
+docker start/stop/kill/restart/pause/unpause/rm
+(!)
+docker wait : bloque l'invit de commande tant que le conteneur passe en parametre n'est pas arrete
+docker update : Modifier les parametres d'un conteneur demarre. Modification uniquement des ressoures allouees au conteneur (cpu, memoire etc...)
+docker create/run :
+Nombreux parametres :
+- Controle ressoures
+- Controle volumes
+- Entry Point
+- Privileges
+
+5.4 Interractions avec conteneurs demarres
+
+docker logs : afficher les logs du conteneur
+Par defaut, docker mets a la dispo du log tout ce qui est ecrit dans STDOUT par process racine
+--follow ou -f pour avoir affichage en continu
+--tail X pour avoir uneiquement les X dernieres lignes de log
+docker exec : executer une commande a l'interieur d'un conteneur demarre
+possibilite de lancer sans -t -i pour faire des commands en mode non interractif
+docker attach : attacher a un conteneur demarre pour visualiser les evenements
+--sig-proxy=false permet de ne pas relayer les signaux (et donc de quitter le attach avec un Ctrl-C)
+docker rename : renommer un conteneur
+docker cp : copier des fichier entre un conteneur demarre et le systeme de fichier de l'hote
+docker diff : visualiser les changement effectues sur les fichier d'un conteneur
+A : ajout, C: changes, D : deletions
+docker top : afficher le resultat de top dans le conteneur
+docker export : export l'ensemble du systeme de fichiers d'un conteneur dans un fichier tar
+docker port : visualiser les ports exposes d'un conteneur
+
+5.5 Commandes relatives aux images
+
+docker build : construire une image a partir d'un dockerfile
+-t pour difnir un tag d'image, cad son nom
+-f pour specifier un dockerfile
+--rm pour effacer les images intermediaires
+
+docker commit : creer une image a partir d'un conteneur demarre
+docker history : visualiser les differentes couches d'une image et les instructions dockerfile associees
+docker images : lister les images du cache local
+-a pour avoir les images intermediaires
+docker rmi : supprimer une image du cache local
+docker save/load : importer des images depuis le cache local ou les exporter vers le cache local
+docker import : importer un system de fichier d'un conteneur (apres un export)
+
+5.6 Interractions avec le registry
+docker login/logout
+docker push/pull
+docker search : chercher avec le nom de l'image
+--filter "is-official=true"
+docker tag : donner un nom alternatif a une image
+rmi sur ce nouveau nom effacera uniquement l'alias et non l'image
+alias lastest pointe toujours sur la derniere version
+
+5.7 Reseau et volumes :
+(voir tableau)
+
+6. Les instruction dockerfile
+6.1 Les modeles d'instructions

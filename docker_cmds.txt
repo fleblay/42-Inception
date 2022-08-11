@@ -1,3 +1,11 @@
+man pages :
+git clone https://github.com/docker/docker-ce
+in components/cli
+make -f docker.Makefile manpages
+cp -R du dossier man vers un endroit desire
+echo "MANPATH $PWD/man" | sudo tee -a /private/etc/man.conf
+rm du repo
+
 docker run -d --name web-server -ti -p 8090:80 nginx
 
 -d : detached mode
@@ -9,7 +17,7 @@ socat :
 socat -v UNIX-LISTEN:/tmp/socatproxy.sock,fork,reuseaddr UNIX-CONNECT:/var/run/docker.sock &
 
 docker -H unix:///tmp/socatproxy.sock ps -a
-
+Pour lister les process
 -H to specify host
 
 Stop docker deamon :
@@ -50,4 +58,3 @@ Configurer le tableau dans le json pour ajouter un port d'ecoute
 
 Restart docker a la bourring
 killall Docker && open /Applications/Docker.app 
-
