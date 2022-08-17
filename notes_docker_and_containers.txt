@@ -777,6 +777,57 @@ On pourra les chercher avec docker inspect
 Si une instruction ONBUILD echoue, c'est l'instruction FROM qui echouera
 
 7.5 Modifier le contexte system au cours du BUILD
-Une ima
+Une image herite des caracteristiques systeme de son image de base. Il est possible de les modifier
 
 SHELL :
+Permet de changer le terminal utilise par defaut
+Sous linux, c'est ["/bin/sh", "-c"]
+
+USER :
+Permet de definir l'utilisateur qui execute les cmd issues de RUN, CMD et ENTRYPOINT.
+L'effet s'applique a toute instruction qui suit et a toute image enfant
+
+Il est preferable de ne l'utiliser qu'une seule fois.
+Pour la secu, la specification de l'utilisateur est indispensable dans le cyle de vie du conteneur.
+Pour la construction de l'image (ie les commandes RUN), on peut garder root.
+
+Finalement :
+- Image non finale : pas d'instruction USER
+- Image finale : les RUN sont effectues en ROOT, puis on specifie un utilisateur afin d'assurer que le process actif du conteneur n'est pas execute par root
+Possible de visualiser l'utilisateur courant du conteneur grace a docker inspect
+
+STOPSIGNAL :
+Permet de definir le signal a executer lors de l'arret d'un conteneur
+On definit le signal soit par sa position dans la syscall table, soit nom format SIGNAME
+Seul SIGKILL ne peut pas etre intercepte
+
+Dans le cas d'un docker stop, seul le process de PID 1 recevra la signal de STOPSIGNAL (par defaut SIGTERM)
+SIGKILL est egalement recu au bout de 10s par defaut
+
+7.5 Autoguerison (self-healing)
+
+2 cas dans lesquels ils est possible de prevoir des actions auto pour agir sur un conteneur qui ne fonctionne pas :
+- Process principal du conteneur meurt (mort du conteneur involontaire)
+- Processus ne fonctionne pas normalement (mais ne s'eteint pas de lui-meme)
+
+Restart :
+Modificateur --restart disponible pour run, start et update
+Modifie la politique de redemarrage automatique du conteneur dans le cas ou le process racine se termine
+
+docker run --restart=always
+docker run --restart=on-failure
+
+Healthcheck :
+Possibilite de laisser le moteur docker monitorer l'etat de sante d'un conteneur
+
+HEALTHCHEK --interval=10s
+	CMD cmd_to_check || exit 1
+
+Le nombre de tentative infructueuses est par defaut fixe a 3 (3 * 10s ici)
+--retries : pour le changer nombre tentative infructueuses
+--timeout : pour le delai accorde a la commande CMD pour se terminer
+--start-period : pour le delai, une fois le conteneur actif, d'attente avant la premiere verif
+
+Pour remedier au probleme : declencher un redemarrage du conteneur fautif en utilisant l'info de docker events
+
+
