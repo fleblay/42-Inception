@@ -484,3 +484,299 @@ alias lastest pointe toujours sur la derniere version
 
 6. Les instruction dockerfile
 6.1 Les modeles d'instructions
+
+Plusieurs modeles possibles, dont en general :
+- 1 au format terminal
+- 1 au format execution
+
+Format Terminal :
+CMD <command>
+S'execute au travers d'un terminal applicatif via /bin/sh -c <command>
+Plus lisible que le format Execution
+/bin/sh doit etre disponible dans l'image
+
+Attention :
+(!)
+- Le PID du process demarre par le point d'entree du conteneur a le PID 1
+- Lors d'un docker stop, seul le process de PID 1 est arrete proprement par un SIGTERM, les autres prennent un SIGKILL apres 10s
+- Lorsque /bin/sh recoit un signal pour s'arreter, il ne le transmet pas a ses enfants
+
+Format Execution :
+CMD ["executable", "param1", "param2"]
+Permet executer une commande sans intermediaire
+
+Le format terminal etant plus lisible, on va l'utiliser si :
+- L'image contient /bin/sh
+- Il n'y a pas de process supplementaire qui necessite un arret propre
+
+Recap :
+- Test : Terminal
+- Commande qui s'execute directement (ls, mkdir etc...) : Terminal
+- Commande lancant un process : Exe
+- Autres : Exe
+
+Pour faire un commentaire, on utilise le prefixe "#"
+
+6.2 Les instructions
+
+FROM :
+Specifie l'image docker parente a utiliser
+Possibilite de specifier le tag ou le digest (par defaut, la commande utilise le tag latest)
+FROM est la seule instruciton obligatoire d'un Dockerfile
+Elle doit etre placee en debut de fichier
+Attention, un Dockerfile peut avoir plusieurs instruction FROM, mais cela creera plusieurs images.
+C'est en revanche mauvaise idee (impossible de specifier nom de l'image cible etc...)
+
+2 bonnes pratiques :
+- Un fichier dockerfile contient exactement une instruction FROM sauf en cas de constrution multi-etages
+- Dans l'instruction FROM, toujours specifier la version de l'image source
+
+RUN :
+Executer des commandes pour construire l'image : c'est l'ecart entre la source et l'image qu'on veut contruire.
+Les instructions RUN servent a construire l'image, donc les commandes a executer seront inactives apres leur exe.
+Pour cette raison, on va privilegier l'ecriture terminal
+Possibilite d'ecrire plusieurs commandes en les separant par un ;
+L'utilite majeure de RUN est d'installer des fonctionnalites particulieres a l'image
+
+(!)
+Attention : ne pas utiliser "RUN yum update -y" seul, a cause du cache Dockerfile (voir page 125)
+Si une instruction a deja ete faite sur une machine, elle ne sera pas executee a nouveau lors de la nouvelle construction d'un dockerfile mais lue depuis le cache
+On peut ainsi avoir des versions de paquets differents selon la machine sur laquelle on execute le dockerfile
+
+Conclusion :
+Toujours s'assurer que les paquets sont a jour avant d'en installer un nouveau
+ie : Toujours combiner "yum update -y " avec le "yum install -y Package"
+
+CMD :
+Execute une commande au demarrage du conteneur resultant.
+Cette instruction ne sera pas jouee lors de la constrution de l'image, mais pendant l'execution du conteneur associe
+Seule la derniere instruction CMD du Dockerfile sera jouee. Il ne faut avoir qu'une seule instruction CMD par Dockerfile
+
+Il existe une forme CMD ["param1", "param2"] sans preciser en premier lieu un executable
+Elle doit etre combinee avec l'instruction ENTRYPOINT
+Utile dans le cas d'une surchage du point d'entree du conteneur sur seulement une partie de commande
+
+ex :
+ENTRYPOINT ["/bin/ping", "-c", "5"]
+CMD ["localhost"]
+
+Plus simple de surchager l'instruction CMD que ENTRYPOINT :
+docker run image_name new_cmd
+docker run --entrypoint new_entry image_name
+
+ENTRYPOINT :
+Comme CMD, permet d'executer une commande au demarrage du conteneur resultant
+Carac identiques a CMD : jouee uniquement demarrage conteneur, seule derniere instruction executee
+
+(!) Attention :
+Si instruction ENTRYPOINT format EXE alors instruction CMD (peut importe format) sera rajoute a la fin de l'instruction ENTRYPOINT
+Si instruction ENTRYPOINT format TERMINAL alors CMD sera (peut importe format) sera ignoree
+
+EXPOSE :
+Decrit les ports que le conteneur expose et sur lesquels il ecoute
+Ces ports devront ensuite etre mappe avec des ports de l'hote executant le conteneur pour etre accessibles
+On peut exposer pour un protcole uniquement :
+EXPOSE 80/TCP
+
+Le mappage du port peut se faire :
+Automatiquement : docker run -P
+Manuellement :
+(!)
+- Specifier quels ports doivent etre mappes parmis ceux exposes
+- Specifier les ports hotes a utiliser afin de les mapper avec les ports exposes
+La precision du port hote est facultative
+docker run -p [port_hote:]port_expose
+L'option -p est cumulative
+
+Resume :
+- Option -P et les ports exposes par EXPOSE seront mappes automatiquement avec des ports dispo
+- Option -p et les ports exposes sont specifies manuellement. L'instruction EXPOSE devient alors informative
+
+ADD :
+Ajoute un fichier dans l'image. Il ne s'agit pas d'un alias ou d'un raccourci
+La ou les sources peuvent etre des fichiers locaux ou distants
+Si src est fichier local, il doit etre dispo sur la machine qui construit l'image et par forcement sur celle qui fait docker run
+Possibilite de changer l'utilisateur a la copie
+Mieux vaut utiliser un curl ou un wget que ADD pour les fichiers distants, car fonctions de dl sont limitees
+
+Le chemin courant de la machine qui construit est donne en parametre de la fonction build
+Le chemin courant dans le conteneur est '/' sauf s'il a ete change avec WORKDIR
+
+(!) Attention :
+Chaque instruction dans un Dockerfile est executee de maniere a etre independante dans le but de creer des images intermediaires dans le systeme de cache.
+A chaque instruction le contexte courant redevient celui par defaut ('/' pour le workdir)
+
+(!) Attention :
+Si le fichier copie est une archive .tar locale avec un format de compression reconnu, alors il sera decompresse en dossier
+
+(!) Attention :
+Si le destination se termine par un '/', cela veut dire qu'on specifie un dossier et que la source sera ajoutee telle quelle dans ce dossier.
+Sinon, c'est un nouveau nom
+
+COPY :
+Permet d'ajouter un fichier dans l'image.
+La source doit etre un fichier local. Il ne s'agit pas d'un alias ou d'un raccourci
+Difference avec ADD :
+- La source doit etre un fichier local
+- COPY ne decompresse pas automatiquement
+
+(!) Attention :
+COPY et ADD permettent d'ajouter plusieurs fichier en une seule fois, cependant, pas recommande afin exploiter cache Docker
+Si au moins un fichier source est modifie, l'instruction sera consideree comme changee et sera rejouee (pas utilisation du cache) ainsi que toutes les suivantes
+
+VOLUME :
+Permet de creer un point de montage dans l'image.
+Il se referera a un emplacement, appele volume, dans l'hote ou dans un autre conteneur.
+En bonne pratique, on utilisera une seule instrution volume TERMINAL (pour limiter images intermediaires) avec eventuellement plusieurs volumes
+L'option -v emplacement_hote:emplacement_conteneur fait double emploi avec l'instruction VOLUME du conteneur.
+L'effet fonctionnel de l'instruction devient ainsi nul, mais elle apporte une meta donne sur le point de montage dans le conteneur.
+L'instruction VOLUME est toujours executee a partir de '/' meme si workdir change le chemin courant.
+On specifiera toujours '/' pour plus de clarete
+
+6.3 Bonnes pratiques
+
+Generalites :
+Format exe pour CMD et ENTRYPOINT
+Format terminal pour RUN
+Trier les instructions pour optimiser cache :
+FROM, ARG, ENV-LABEL, VOLUME, RUN-COPY-WORKDIR, EXPOSE, USER, ONBUILD, CMD-ENTRYPOINT
+
+Pas de sudo
+
+FROM :
+Une seule instruction et on precise le tag
+
+RUN :
+Maj systematique de l'image et une seule instruction pour tous les packages
+ex :
+RUN yum update -y && yum install -y \
+package1 \
+package2 \
+package3
+Utilisation de WORKDIR plutot que changer chemin courant avec run
+
+CMD et ENTRYPOINT :
+Utilisation de ENTRYPOINT en priorite
+CMD utilisee si le point d'entree doit etre surcharge partiellement (entry+cmd) ou totalement (uniquement cmd)
+
+EXPOSE :
+On l'utilisera pour renseigner clairement les ports qu'utilise le conteneur
+
+ADD/COPY :
+Systematiquement COPY au lieu de ADD
+Modele terminal car plus simple a lire
+Une instruction par fichie a ajouter
+
+VOLUME :
+On l'utilisera pour renseigner clairement les points de montage qu'utilise le conteneur
+Chemin commencea toujours par un /
+Une seule instruction VOLUME
+
+ENV/LABEL/ARG :
+On regroupera les variables d'env en une seule instruction. Idem pour les labels
+On preferera surcharger l'env value PATH plutot que de specifier a chaque fois le chemin absolu
+Instruction ARG toujours devant ENV et LABEL
+Si env value peut etre surchagee lors de la construction d'une image, on utilisera conjointement ARG et ENV selon modele :
+ARG variable
+ENV variable ${variable:-valeurParDefaut}
+
+7. Docker avance
+
+7.1. ENV
+Permet crer ou maj valeur d'environnement afin des les utiliser lors de la construction de l'image OU dans les conteneurs associes
+Les variables d'env sont disponibles dans toute la descendance de l'image : un conteneur a acces :
+- Aux variables d'env decrites dans son Dockerfile
+- Aux variables d'env decrites dans le Dockerfile de l'image source
+
+Si plusieurs variables d'env doivent etre crees, on prefere la forme "ENV key1=value1 key2=value2 ..." plutot que multiples "ENV key=value" afin de ne creer qu'une seule couche de cache image
+Penser a utiliser guillements ou echapper les espaces
+
+Utilisation de ENV typique pour surcharger le PATH
+
+Possible de surcharger variable d'env au demarrage conteneur :
+docker run --env key=value
+--env est cumulative
+
+7.2 LABEL
+
+Permet d'ajouter des metadonnes a l'image
+Les valeurs doivent etre encapsulees par des guillemets
+On peut lister les labels avec docker inspect
+docker inspect --format='{{json .Config.Labels}}' image_to_inspect
+Possible d'ajouter de l'info a la construction avec docker build --label key=value
+
+7.3 Parameter le BUILD
+Il s'agit d'influencer la maniere dont l'image va etre construite
+
+WORKDIR :
+Changer le cheming courant.
+S'applique a toute instruciton qui suit.
+
+(!)
+Attention :
+L'instruction change le chemin courant dans l'image : le chemin du conteneur demarre sera celui de la derniere instruction WORKDIR
+Le chemin de l'instruction WORKDIR sera toujours specifie en absolu
+
+(!)
+WORKDIR permet l'utilisation de variables d'env creer par ENV au sein du meme Dockerfile.
+Une env value provenant d'une image source ou native d'une systeme ne pourra par etre utilisee
+
+ENV cheminCourant /tmp
+WORKDIR $cheminCourant/$unFichier
+
+Aura pour resultat un workdir a /tmp/$unFichier ($unFichier non substitue car n'existe pas dans le Dockerfile)
+
+ARG :
+Permet de definir des variables (arguments) qui sont passes comme parametres lors de la construction d'une image.
+On devra alors utiliser "docker build --build-arg name=value"
+
+ARG <name>[=<defaultValue>]
+default value est optionnel (difference avec les env du coup)
+
+(!)
+Attention : Si une valeur contient des espaces, elle doit etre encapsulee par des ""
+
+Utilisation d'un argument :
+${name:-val_par_defaut} OU $name
+
+Possibilite d'utiliser un argumet uniquement s'il a ete defini par ARG avant
+Ne pas passer d'infos sensibles avec --build-arg
+Les arguments donnes avec --build-arg doivent imperativement avoir ete definis dans le Dockerfile
+La portee des variables definies par ARG ne s'etendd pas au conteneur
+
+(!)
+Attention : ENV prime sur ARG :
+- ENV place avant ARG : ARG sera ignore
+- ENV place apres ARG : ARG valable jusqu'a ENV
+
+Pour agir sur image et conteneur associes : ENV
+Pour agir uniquement sur instructions de constructions : ARG
+
+Surchage :
+- Pour ARG, la surcharge se fait a la construction de l'image: docker build
+- Pour ENV, la surchage se fait au demarrage du conteneur : docker run
+Si on surchage une variable d'env uniquement au demarrage, on peut avoir val differente a la construction et a l'exe
+Il faut donc documenter l'image, notamment en specifiant les valeurs d'env qui peuvent etre surchargees au demarrage
+
+Bonne pratique :
+ARG value
+ENV value ${value:-defaultValue}
+
+(!)
+Attention :
+Une variable d'env qui ne peut pas etre surchargee lors de la constructionde l'image (via Bonne pratique au dessus) ne doit JAMAIS etre utilisee par des instruction de construction de l'image
+
+ONBUILD :
+Permet de definir des instructions qui seront executees uniquement lors de la construction des images enfants directs
+Les instructions ONBUILD seront executees directement apres l'instruction FROM
+Utilisable avec RUN, ADD, COPY, USER et ARG)
+Il convient de tagguer avec onbuild toute image qui a une ou plusieurs instructions ONBUILD
+
+A la lecture d'une instruction ONBUILD, le constructeur Docker va creer une metadonnee qu'il placera dans le manifeste de l'image au niveau de la clef OnBuild
+On pourra les chercher avec docker inspect
+Si une instruction ONBUILD echoue, c'est l'instruction FROM qui echouera
+
+7.5 Modifier le contexte system au cours du BUILD
+Une ima
+
+SHELL :

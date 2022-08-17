@@ -1,0 +1,2 @@
+FROM python-app:1.0-onbuild
+CMD ["0"]
