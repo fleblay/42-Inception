@@ -1,0 +1,25 @@
+version: "3"
+services:
+  pinger-1:
+    build: "centos-1"
+    container_name: pinger-1
+    networks:
+    - pinger-network
+    volumes:
+    - pinger-volume-1:/etc
+    - pinger-volume-2:/var
+  pinger-2:
+    build: "centos-2"
+    container_name: pinger-2
+    networks:
+    - pinger-network
+    volumes:
+    - pinger-volume-1:/etc
+    - pinger-volume-2:/var
+
+networks:
+  pinger-network:
+
+volumes:
+  pinger-volume-1:
+  pinger-volume-2:

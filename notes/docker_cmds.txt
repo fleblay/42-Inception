@@ -1,0 +1,83 @@
+man pages :
+git clone https://github.com/docker/docker-ce
+in components/cli
+make -f docker.Makefile manpages
+cp -R du dossier man vers un endroit desire
+echo "MANPATH $PWD/man" | sudo tee -a /private/etc/man.conf
+rm du repo
+
+docker run -d --name web-server -ti -p 8090:80 nginx
+
+-d : detached mode
+-t : open a pseudo tty
+-i : stdin is open event is container is detached
+-p : publish hostport:containerport
+
+socat :
+socat -v UNIX-LISTEN:/tmp/socatproxy.sock,fork,reuseaddr UNIX-CONNECT:/var/run/docker.sock &
+
+docker -H unix:///tmp/socatproxy.sock ps -a
+Pour lister les process
+-H to specify host
+
+Stop docker deamon :
+LINUX
+sudo systemctl stop docker
+MACOS
+launchctl list | grep docker
+launchctl stop XXXXXX
+
+Lancer docker deamon sur un socket particulier
+LINUX
+sudo dockerd -H tcp://0.0.0.0:2375 &
+MACOS
+Ne fonctionne pas. Faire plutot :
+socat -d -d  TCP-LISTEN:2375,fork,reuseaddr UNIX-CLIENT:/var/run/docker.sock (attention, toutes les ip)
+(socat TCP-LISTEN:2375,range=127.0.0.1/32,reuseaddr,fork UNIX-CLIENT:/var/run/docker.sock)
+(socat TCP-LISTEN:2375,bind=127.0.0.1,reuseaddr,fork UNIX-CLIENT:/var/run/docker.sock)
+docker -H 0.0.0.0:2375 info
+On va ainsi rediriger les connexion TCP sur 2375 vers le socket de docker
+
+export DOCKER_HOST="tcp://0.0.0.0:2375" -> inutile du coup
+curl http://localhost:2375/info |jq pour avoir les infos du daemon une fois la redirection faite
+
+Listing des ports :
+Linux : netstat -pant
+Macos : netstat -anp tcp
+
+Fichier de config du daemon :
+Linux : 
+/usr/lib/systemd/system/docker.service
+Macos :
+~/.docker/daemon.json
+Mais Attention : si config de listen de connexion via systemd ET le .json -> conflit !!!
+Configurer le tableau dans le json pour ajouter un port d'ecoute
+ "hosts": ["unix:///var/run/docker.sock", "tcp://127.0.0.1:2375"]
+ (ATTENTION, BIEN AJOUTER LA VIRGULE APRES LA PRECEDENTE VARIABLE)
+ (Ne fonctionne quand meme pas sous Macos)
+
+Restart docker a la bourring
+killall Docker && open /Applications/Docker.app 
+
+Tester comm entre conteneurs :
+yum install -y nmap pour avoir le package
+nc -l 5000 pour ecouter sur le port 5000
+
+yum install -y telnet
+telnet ip 5000 pour envoyer des messages en telnet
+
+Verifier les infos des conteneurs connectes a un reseau :
+docker network inspect nom_du_reseau --format '{{.Containers}}'
+
+Volumes :
+docker volumes ls
+
+Utile pour verifier depuis un conteneur que des donnes sont ecrites sur un volume monte sur differents conteneurs
+Verifier le contenu d'un fichier toutes les 1s :
+watch -n 1 cat nom_du_fichier
+
+curl -sSL http://www.google.com -o
+-s silent
+-S show error even on silent
+-L follow if change of location of file
+-o output file
