@@ -68,3 +68,16 @@ telnet ip 5000 pour envoyer des messages en telnet
 
 Verifier les infos des conteneurs connectes a un reseau :
 docker network inspect nom_du_reseau --format '{{.Containers}}'
+
+Volumes :
+docker volumes ls
+
+Utile pour verifier depuis un conteneur que des donnes sont ecrites sur un volume monte sur differents conteneurs
+Verifier le contenu d'un fichier toutes les 1s :
+watch -n 1 cat nom_du_fichier
+
+curl -sSL http://www.google.com -o
+-s silent
+-S show error even on silent
+-L follow if change of location of file
+-o output file

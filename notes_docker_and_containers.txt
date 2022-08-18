@@ -920,3 +920,64 @@ Il ne s'agit pas de comm entre l'hote et le conteneur puisque ceux ci partagent 
 Les ressources exposees par l'hote sont accessibles depuis conteneur et inversement
 
 Acces a l'hote depuis un conteneur : option gateway
+Sans specifier de --net special, on peut acceder a l'hote via la gateway et le port 22 en ssh par ex.
+Le port est en fait accesible pour tout le monde (connexion depuis internet par ex)
+Le trafic est protege vers l'hote par son iptables.
+
+8.3 Persistance : Bind Mounts et volumes
+Par defaut, l'architecture meme d'une conteneur entraine la perte de toutes les donnes ajoutees a l'image (copy on write) lorsque celui-ci est detruit
+
+2 types de systemes de fichiers persistants :
+- Bind mount
+- Volumes nommes, plus versatiles et indispensables dans les architectures multi-conteneurs
+
+Bind-mount :
+Methode la plus simple pour rendre persistant un repertoire du conteneur.
+On va monter un repertoire de l'hote dans le conteneur. Toute modif du conteneur sera repercutee sur l'hote et inversement
+RMQ : les fichiers cree par le conteneur auront pour proprietaire par defaut root
+Si on fait un docker volume ls, pas de volume nomme repertorie par Docker
+
+Attention :
+Le montage d'un repertoire depuis l'hote se susbtitue completement au contenu originel du repertoire. Il sera ecrase
+
+Volume nomme:
+Solution plus flexible.
+On delegue au moteur de conteneur la gestion de blcos de systemes de fichier via des drivers
+Par defaut, le driver "local" va stocker ses volumes dans une zone dediee de l'hote : /var/lib/docker/volumes.
+Il existe d'autres drivers
+
+docker volume create nom_du_volume
+docker run -v nom_du_volume:point_de_montage_conteneur
+
+Propriete utile :
+Si volume vide, les contenu du repertoire originel du conteneur est automatiquement copie.
+On peut monter le meme volume dans plusieurs conteneurs
+
+(!)
+Attention :
+Le montage de repertoire presente parfois des surprises avec selinux sous RedHat ou Rocky Linux
+
+Volumes sont utiles pour des tests : pas besoin de creer une arborescence de repertoire sur la machine hote
+Avantage egalement sur la securite : montage d'un repertoire de l'hote dans un conteneur doit se faire avec prudence
+
+De facon generale, si on a besoin que de lire des donnes depuis l'hote, il vaut mieux monter le repertoire en lecture seule
+docker run -v vol:mount_point:ro
+
+8.4 Configuration d'application
+Un des challenges pour un appli est de gerer d'une maniere securisee les secrets et les config : mots de passe, clef SSH...
+
+2 enjeux :
+- S'assurer que seuls les utilisateurs autorises ont acces aux infos
+- Possibilite de modifier les infos
+
+Plusieurs solutions possibles (cf page 198), mais : config et secret
+Docker fourni 2 fonctions qui permettent de creer des objets de conf qui peuvent etre montes sous la forme de fichiers
+secret est crypte et ne peut etre consulte apres sa creation
+
+8.5 Monitoring
+Pour des besoin simples, on peut utilier docker stats
+Sinon CAdvisor de Google
+
+9. Conditionnement et deploiement
+
+-v option cree le directory s'il n'existe pas, contrairement a --mount
