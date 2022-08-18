@@ -830,4 +830,93 @@ Le nombre de tentative infructueuses est par defaut fixe a 3 (3 * 10s ici)
 
 Pour remedier au probleme : declencher un redemarrage du conteneur fautif en utilisant l'info de docker events
 
+8. Conteneurs Real-Life : reseaux, volumes et config
 
+8.2 Reseaux et conteneurs
+Communication entre conteneurs indispensable pour les solutions multi-conteneurs
+Docker s'appuie sur le CNM (Container Network Model) mais le standard est aujourd'hui CNI (Container Network Interface)
+Il a 3 composants principaux :
+- Sandbox :
+Contient la config reseau du conteneur en offrant les memes composantes de base qui existent au niveau de l'hote (interface reseau, table routage...)
+Il y en a 1 par conteneur et l'implementation s'appuie sur un namespace network de la machine hote
+- Endpoint :
+Permet de relier un sandbox a un network
+Typiquement une paire de veth
+Un endpoint est lie a UN sandbox et UN network. Un conteneur a autant de endpoints que de networks auxquels il est connecte
+- Network :
+C'est un ensemble de endpoints qui peuvent communiquer ensemble et avec internet
+Le network est une instanciation d'un pilot (driver) qui fournit les fonctionnalites de connectivite, routage et secu
+
+La dif entre CNI et CNM se fait au niveau du network, mais pour des usages simples, pas de reelle difference.
+
+Les drivers reseaux :
+Par defaut, Docker utilise le driver bridge qui permet une com entre les conteneurs present sur un meme hote.
+Cette implementation s'appuie sur les fonctionnalites du noyau linux
+Autres drivers locaux :
+- none :
+Pas de reseaux, il isole completement le conteneur. Utile egalement pour utiliser Docker avec CNI
+- host :
+Rend disponible la config de la machine hote au conteneur.
+Commande ifconfig donne meme resultat sur hote et sur conteneur.
+Simplifie la comm entre le conteneur et l'hote, mais detriment de la secu.
+- macvlan/ipvlan :
+Simulent un attachement physique au reseau.
+Permettent d'allouer au conteneur une IP sur le meme reseau que l'hote.
+Le conteneur se comporte comme une machine complete et independantede l'hote du point de vue reseau
+Macvlan permet d'associer une MAC address specifique a l'interface reseau du conteneur
+
+Il existe un large pannel de fournisseurs de plugin/drivers reseau, essentiellement pour CNI et des usages Kubernetes
+Le reseau bridge est le plus utilise en pratique
+
+Rootfull/Rootless :
+Contrairement Docker, Podman n'as pas de process central de coordination de l'exe des conteneurs : il est deamonless.
+Mode Rootless : pas besoin des droits root.
+Rootfull : root ou avec droit sudo
+En mode rootfull, Podman est comme Docker pour ce qui concerne le reseau, a part les noms de reseaux/interfaces reseaux.
+En mode rootless, il y a des limitations pour les communications multiconteneurs : Elle est pratiquement impossible sans passer par l'hote
+Le mode rootfull est quasi indispensable pour la mise en place d'une archi multi-conteneurs sans Kubernetes
+
+Le reseau bridge par defaut :
+docker network ls pour lister les reseaux
+Docker vient avec 3 instances de reseaux par defaut : null, host, bridge.
+bridge est utilise par defaut
+docker network inspect nom_du_reseau
+
+Interfaces veth :
+Lors de l'installation de docker, ce dernier cree un pont virtuel ethernet "docker0" sur la machine hote
+L'addresse IP alloue correspond a la gateway du reseau "bridge"
+Cette interface "docker0" est connectee a l'interface reseau de l'hote et permet aux conteneurs de communiquer entre eux et avec l'exterieur
+
+Communication entre conteneurs via le bridge par defaut :
+Au demarrage d'un conteneur, Docker cree une interface virtuelle sur l'hote avec un nom type vethxxxxx et lui assigne une IP libre.
+Cette interface est ensuite connectee a l'interface eth0 du conteneur
+La comm entre conteneurs attaches au reseau bridge est possible via les IP de chacun
+
+Reseau personnalise de type bridge :
+docker network create nom_du_reseau
+Cela va creer un nouveau pont ethernet different de docker0
+docker network connect nom_du_reseau nom_du_conteneur OU docker run --net nom_du_reseau
+docker network rm nom_du_reseau
+Avantage, on peut utiliser les noms de conteneurs pour communiquer grace au DNS du deamon Docker
+
+docker network inspect nom_du_reseau --format '{{.Containers}}'
+
+Lien entre conteneurs, hote et reseaux connectes a l'hote :
+2 niveaux de controle :
+- Machine hote permet transfert des paquets IP
+- Iptables gere dialogue entre interfaces reseaux et l'hote
+
+Le fait que les paquets IP soient transmis par la machine hote est gere par la variable kernel net.ipv4.conf.all.forwarding
+Si forwarding par active, les conteneurs ne peuvent pas communiquer entre eux, ni atteindre reseau externe type internet
+
+Iptables est le parefeu logiciel present par defaut dans majorite distro linux
+Le reseau Docker "bridge" ainsi que les autres se basent sur iptables pour autoriser/refuser les connexions entre conteneurs
+
+Par defaut, le deamon Docker demarre avec le param --ip-masq=true qui permet le masquage des IP (les IP des conteneurs ne sont pas routables sur Internet) et le rajout de la translation NAT
+
+Acces a l'hote depuis un conteneur : option host
+avec docker run --net host
+Il ne s'agit pas de comm entre l'hote et le conteneur puisque ceux ci partagent le meme reseau.
+Les ressources exposees par l'hote sont accessibles depuis conteneur et inversement
+
+Acces a l'hote depuis un conteneur : option gateway

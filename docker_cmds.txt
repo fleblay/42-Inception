@@ -58,3 +58,13 @@ Configurer le tableau dans le json pour ajouter un port d'ecoute
 
 Restart docker a la bourring
 killall Docker && open /Applications/Docker.app 
+
+Tester comm entre conteneurs :
+yum install -y nmap pour avoir le package
+nc -l 5000 pour ecouter sur le port 5000
+
+yum install -y telnet
+telnet ip 5000 pour envoyer des messages en telnet
+
+Verifier les infos des conteneurs connectes a un reseau :
+docker network inspect nom_du_reseau --format '{{.Containers}}'
