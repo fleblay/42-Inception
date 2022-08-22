@@ -1,10 +1,13 @@
 #Linux de test a partir d'une imgage debian :
-docker run --name debian-test -ti --rm debian:buster -p 8000:80
+docker run --name debian-test -ti -p 8000:443 debian:buster 
 
 #Install nginx
 apt-get update -y && apt-get install -y nginx
 
-#Install vim for convenience
+#Install openssl for self signed certificate
+apt-get update -y && apt-get install -y openssl
+
+#Install vim for convenience and curl
 apt-get update -y && apt-get install -y vim
 
 #Check status of nginx
@@ -18,6 +21,42 @@ service nginx status
 service nginx reload && service nginx restart
 
 #A partir de ce moment, on peut acceder au serveur sur un navigateur "localhost:8000"
+
+#Create a pair of RSA 2048 bits keys and the certificate
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/C=FR/ST=IDF/O=Fredo&The_Wailers/CN=mydomain.com" -addext "subjectAltName=DNS:mydomain.com" -keyout /etc/ssl/private/nginx.key -out /etc/ssl/certs/nginx.crt
+
+#to check : localhost
+
+req -x590 : format of the certificate
+-nodes : no descypher passphrase needed. So that nginx will be able to open the file
+-days 365 : time frame of certificate validity
+-newkey rsa:2048 : create the rsa key needed for the certificate
+-sub : fill out auto
+-addext : Alternate name
+-keyout : where to place new private key
+-out : where to place new certificate
+
+conf a utiliser pour /etc/nginx/sites-available/default
+server	{
+		listen	443 ssl;
+		ssl_certificate			/etc/ssl/certs/nginx.crt;
+		ssl_certificate_key		/etc/ssl/private/nginx.key;
+		ssl_protocols			TLSv1.2 TLSv1.3;
+		server_name				localhost;
+
+		location / {
+			root /data/www;
+		}
+}
+
+#On recharge la conf
+nginx -s reload
+
+#On test la conf
+nginx -t
+
+#On check que le server repond
+curl https://localhost
 
 #La conf est dans /etc/nginx
 
@@ -133,3 +172,17 @@ TLS (Transport Layer Security) est l'evolution du SSL (Secure Sockets Layer)
 Protocoles de securisation des echanges
 On parle de SSL/TLS
 Fonctionne sur mode client/server
+Connexion TLS :
+Certificat : Clef publique, infos et signature numerique (hash de la clef privee et des infos du certif)
+- Soit certificat permet de verifier signature numerique avec autorite de certif (AC) et sa liste de clefs publiques
+- soit verif par le navigateur web avec la clef publique du certif
+
+To configure HTTPS server :
+- ssl parameter must be enabled on listening sockets in server block
+- ssl_certificate location must be specified
+- ssl_certficate_key (the private key) location must be specified
+
+(!) ATTENTION :
+- ssl_protocols TLSv1.2 TLSv1.3; a precisier (cf sujet Inception)
+
+Create self-signed ssl certificate :
