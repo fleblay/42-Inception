@@ -1,0 +1,135 @@
+#Linux de test a partir d'une imgage debian :
+docker run --name debian-test -ti --rm debian:buster -p 8000:80
+
+#Install nginx
+apt-get update -y && apt-get install -y nginx
+
+#Install vim for convenience
+apt-get update -y && apt-get install -y vim
+
+#Check status of nginx
+service nginx status
+
+#for all status
+#service --status-all
+#scripts sont dans /etc/init
+
+#Reload and restart nginx after each change in /etc/nginx et /etc/nginx/nginx.conf
+service nginx reload && service nginx restart
+
+#A partir de ce moment, on peut acceder au serveur sur un navigateur "localhost:8000"
+
+#La conf est dans /etc/nginx
+
+Nginx : "Engine-x"
+Serveur russe d'Igor Sysoev depuis 2004
+Peu gourmand et performant
+Interface modulaire qu'on active ou non :
+- Application Acceleration : chargement plus rapide des contenus
+- Reverse Proxying : Proxy inverse (http, TCP, UDP) pour l'acceleration des chargements web
+- Chiffrement TLS : echange donnees securisees
+- Load Balancing : Repartir les demandes pour decharger le serveur principal
+- Videostreaming : Haute perf pour streaming mp4 et FLV
+
+Apache : nouveau process pour chaque requette
+Nginx : oriente sur les evenements, ce qui permet travail asynchrone
+
+Envoyer un signal au process principal :
+nginx -s <signal>
+nginx -s reload par exemple pour prendre en compte les modif de ngxinx.conf (service reload est mieux)
+Les id des process de nginx sont dans /var/run/nginx.pid
+
+Beginner's guide :
+Master Process : read and eval conf and maintain worker processes
+Worker Processes : Process requests
+Nginx is event-based model
+Nginx consists of modules controllled by directives in conf file:
+- Simple directives : name parameter;
+- Block directives : name parameter { additional_instruction;}
+- Context : block directive that can have other directives inside braces
+ex : server in http, location in server
+
+Main context : directives places in conf file outside any context : events, http
+location : if several matching, nginx selects the one with longest prefix
+On ajoute l'URI a la root specifiee par ex :
+
+Config simpliste de site sous /etc/nginx/sites-available/default
+
+server {
+	location / {
+		root /data/www;
+	}
+
+	location /images/ {
+		root /data;
+	}
+}
+
+permettra de toucher /data/images/photo.jpg en demandant http://localhost/images/photo.jpg
+UTILE :
+On peut trouver les logs d'acces et d'erreur sous /var/long/nginx/error.log et access.log
+
+Proxy sever :
+
+server {
+	location / {
+		proxy_pass http://localhost:8080;
+	}
+
+	location ~ \.(gif|jpg|png)$ {
+		root /data/images;
+	}
+}
+
+server	{
+		listen 8080;
+		root /data/up1;
+		location / {
+		}
+}
+
+Maps all requests to /data/up1 of local file system
+Root of server context used if no root specified in location
+proxy_pass to send request to a proxied server
+location ~ regex pour utiliser une regex au lieu strcmp
+location ~ prioritaires sur location string qui pourrait aussi correspondre (la plus longue)
+
+FastCGI Proxying :
+php-fpm : php-FastCGI Process Manager
+Avantage du FastCGI : les processus sont persistants au lieu de creer un nouveau process par demande
+To route requests to Fast CGI servers
+fastcgi_pass instead of proxy_pass
+fastcgi_param to set parameters to the fastCGI server
+
+
+ex :
+    location / {
+        fastcgi_pass  localhost:9000;
+        fastcgi_param SCRIPT_FILENAME $document_root$fastcgi_script_name;
+        fastcgi_param QUERY_STRING    $query_string;
+    }
+
+How nginx processes a request :
+https://nginx.org/en/docs/http/request_processing.html
+
+NGINX tests request's header filed "Host" to determine which server the request should be routed to
+If doesn't match any, NGINX will route the request to default server for the port (1st one if no
+default_server specified" for the listen directive)
+Si mixed name-based and IP-based virtual servers:
+1. NGINX tests IP address and port for request
+2. NGINX tests HOST header field. If not found, process by defautlt server
+
+RMQ :	$document_root is equal to root directive of server ("/data/www/" par ex)
+		$fastcgi_script_name is equal to requested URI ("index.php" par ex)
+		SCRIPT_FILENAME vaut donc "/data/www/index.php" pour une requette qui match la location /
+
+Dans le context location, la directive index permet de refaire une requette fictive interne si requete se finit
+par un "/"
+
+Configuring HTTPS servers :
+https://nginx.org/en/docs/http/configuring_https_servers.html
+
+TLS (Transport Layer Security) est l'evolution du SSL (Secure Sockets Layer)
+Protocoles de securisation des echanges
+On parle de SSL/TLS
+Fonctionne sur mode client/server

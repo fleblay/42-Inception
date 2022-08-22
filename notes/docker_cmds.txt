@@ -81,3 +81,44 @@ curl -sSL http://www.google.com -o
 -S show error even on silent
 -L follow if change of location of file
 -o output file
+
+									COMPOSE
+
+docker compose [options] [COMMAND] [ARGS...]:
+-f to specify file instead of compose.yaml or docker-compose.yaml
+-p to specify project name instead of current_directory
+--profile to enable specific services
+ex for profiles :
+database:
+  image: mysql
+  profiles: ["debug", "dev"]
+
+docker compose up [SERVICE...] :
+build, (re)create, start and attaches to containers for a service
+--detach to start in background
+--build : build images before starting containers
+
+docker compose build :
+builds services onces and tags them by default as project_service
+to be used after a change in service's dockerfile or content in build directory
+
+docker compose down :
+stops containers, removes containers, network, volumes and images created by up
+defaut : remove containers, networks
+--rmi all: removes images used by servies
+--volumes : removes named volumes in dockerfile
+
+image dans docker-compose : run a partir de l'image, et la pull si non existante
+build dans docker-compose : build l'image a partir du dockerfile du path precise, puis run
+
+env variables :
+file name .env or --env-file option when using docker-compose up
+values in the shell take precedence over those specified in the .env file
+if not variable not set, ${VARIABLE} will be empty string
+${VARIABLE:-default} if unset or empty
+${VARIABLE:default} if unset
+Pass environment variables to a container's service (same as docker run -e VAR=VALUE) :
+web:
+  environment:
+    - DEBUG=1
+Attention, regles de precedence a checker sur la doc docker
