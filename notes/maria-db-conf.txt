@@ -1,0 +1,239 @@
+#Linux de test a partir d'une imgage debian :
+docker run --name maria-test -ti -p 3307:3306 debian:buster
+
+#Install mariadb client and server
+apt-get update -y && apt-get install -y mariadb-client mariadb-server
+
+#Install mysqldump
+apt-get update -y && apt-get install -y mariadb-client mariadb-server
+
+#Install man pages for help
+apt-get install -y man-db less
+
+#add user fred
+useradd fred
+passwd fred
+
+#Check mysql running by gettin version
+mysqld --version
+
+#Start mysqld (preferer la ligne suivante)
+#service mysql start
+
+#Start mysqld
+mysqld_safe &
+
+#check service is running
+service mysql status
+OU
+service --status-all
+
+#Run secure install -> check les infos de config via des param
+mysql_secure_installation
+
+#allow tcp connexion from everywhere instead of just localhost
+-> change bind address to 0.0.0.0 in /etc/mysql/mariadb.conf.d/50-server.conf
+
+
+
+#restart mysqld to enforce changes
+kill %1
+mysqld_safe &
+
+#check process listening
+ss -tunlp
+OR
+lsof -i -P -n | grep LISTEN
+
+#connect to mysql server with client
+mysql -u root -p -h localhost
+
+https://stackoverflow.com/questions/19101243/error-1130-hy000-host-is-not-allowed-to-connect-to-this-mysql-server
+#add an external access
+CREATE USER 'root'@'%' IDENTIFIED BY 'some_pass';
+GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
+FLUSH PRIVILEGES;
+kill and restart mysqld_safe
+
+#connect from outside 3307->3306:
+mysql -u root -p -h localhost -P 3307
+
+mysqld is actual mariadb Server Binary
+mysqld_safe is a wrapper around mysqld (server binary)
+mysqladmin pour faire des operations similaires a l'init.
+ex : mysqladmin -u root -p password "nv_mot_de_passe"
+
+MariaDB tuto :
+https://mariadb.com/kb/en/a-mariadb-primer/
+
+SQL : Secured Query Language
+An SQL statement that requests data is called a query
+Databases stores info in tables
+
+cmds :
+create database if not exists db_name;
+use db_name;
+create table if not exist table_name;
+show tables;
+describe table_name;
+select * FROM table_name; (* for all columns)
+
+INSERTING DATA :
+insert into table_name (list of columns) values (list of values for columns);
+
+MODIFYING DATA :
+update books
+set Title = "new_title"
+where BookID = 7;
+
+default client : mysql
+monitor mode or queries from command-line
+Not good practice to use root unless specific task
+mysql -u root -p -h localhost
+
+create database data_base_name only create a sub-directory in linux filesystem in directory where mariadb data files are
+
+CREATE TABLE books (
+isbn CHAR(20) PRIMARY KEY,
+title VARCHAR(50),
+author_id INT,
+publisher_id INT,
+year_pub CHAR(4),
+description TEXT );
+
+alter table : change settings of table
+drop table : delete table and data (Warning !)
+
+On peut finir une commande par ; ou \g
+On peut annuler une commadne en cours avec \c
+Les mots reserves sont case-insensitive
+Les databases et tables names sont case sensitive (elles font ref a des vrais directory linux)
+les noms de columns sont case insensitive
+
+AUTO_INCREMENT -> pas besoin de specifie la value
+
+Inserer plusieurs entres en 1 fois :
+
+insert into table_name
+(xx1, xx2, xx3, xx4)
+values (abc, def, ghi, ijk),
+(abc3, def3, ghi3, ijk3),
+(abc4, def4, ghi4, ijk4);
+
+Retrieve data tuto :
+
+Select :
+from
+join table_name using (table_column);
+
+select as 'Name_of_display'
+where table_column = 'value';
+
+Changing data :
+UPDATE books
+SET title = 'Amerika'
+WHERE isbn = '0805210644';
+
+delete from books
+where author_id = '2034'
+
+Getting data tutorial :
+select column1, column2, column3 form table;
+
+Attention, limit doit etre place en derniere position de la query
+Limit [start_pos,] number
+
+Attention, order doit etre apres where (si present) et avant limit (si present)
+order by title asc
+
+Adding and changing data tuto :
+insert table_name values ('xxx', 'xxx', 'xxx'); si on specifie tous les champs dans l'ordre
+insert into table_name (col1, col3) values ('xxx', 'xxx'); si on ne specifie pas tous le champs
+
+into est optionnel
+insert ignore to just ignore errors (ie just not insert duplicates if UNIQUE specified)
+insert low_priority to not block select statements
+insert delayed = insert low_priority but doesn't block client cli
+
+Creating a sub_table :
+insert into sub_table_name
+(last, first, tel)
+select name_last, name_first, tel_home
+from data_base_name.table_name
+where softballplayer = 'Y';
+
+Replace : same as insert, mais remplace les elements qui ont le meme key field
+
+Update : change data in existing records but only for certain columns
+update low_priority table_name
+set col1 = 'txt1', col2 = 'txt3'
+where id < 100;
+
+Possibilite d'update des tables de db differentes :
+UPDATE table3, table4
+SET table3.col1 = table4.col1
+WHERE table3.id = table4.id;
+
+Altering tables :
+making a backup of a database :
+mysqldump --user='username' --password='password' --add-locks db1 clients > clients.sql
+--add-locks to lock the database during the backup
+Restoring a database :
+mysql --user='username' --password='password' db1 < clients.sql
+
+Basic addition :
+add a columns to the end :
+ALTER TABLE clients
+ADD COLUMN status char(2);
+
+AFTER column_name to specify location
+FIRST to insert the column in first position
+
+change type of column 'status':
+CHANGE status status enum('AC', 'IA');
+
+change type of column and name to 'active':
+CHANGE status active enum('AC', 'IA');
+
+rmq : with CHANGE, everything has to be specified, even items that are not to be changed
+
+To make changes to table already containing data :
+MODIFY can only change data types and not columns names
+ex : modify active enum('yes', 'no', 'AC', 'IA');
+
+To changes values avaibles :
+1. modify pour avoir les 4 enum avec modify
+2. update set yes where AC
+3. update set no where IA
+4. modify avec les 2 enum restantes
+
+Suppress a column : Warning !
+drop column_name;
+
+Change default value :
+alter table table_name
+alter column_name set default 'LA';
+
+Remove default valu :
+alter column_name drop default;
+
+Indexes :
+
+index is separate from indexed column
+show index from table_name\G;
+\G to display in protrait
+
+Before the name of an indexed column can be changed, the index related to it must be eliminated
+alter table table_name
+drop primary key,
+change column_name column_new_name int primary key;
+
+Renaming and shifting tables :
+rename table table_name to new_table_name;
+OR
+rename table db.table_name to new_db.new_table_name;
+
+order on the fly with order by ASC or DESC in select statement
+order permanently with :
+ALTER TABLE table_name
+ORDER BY column1, column2

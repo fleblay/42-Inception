@@ -1,5 +1,5 @@
 #Linux de test a partir d'une imgage debian :
-docker run --name debian-test -ti -p 8000:443 debian:buster 
+docker run --name nginx-test -ti -p 8000:443 debian:buster
 
 #Install nginx
 apt-get update -y && apt-get install -y nginx
@@ -7,23 +7,28 @@ apt-get update -y && apt-get install -y nginx
 #Install openssl for self signed certificate
 apt-get update -y && apt-get install -y openssl
 
-#Install vim for convenience and curl
+#Install vim for convenience
+apt-get update -y && apt-get install -y vim
+
+#Install curl for tests
 apt-get update -y && apt-get install -y vim
 
 #Check status of nginx
-service nginx status
+#service nginx status
 
 #for all status
 #service --status-all
 #scripts sont dans /etc/init
 
 #Reload and restart nginx after each change in /etc/nginx et /etc/nginx/nginx.conf
+#Finalement, a eviter, prefer un lancement de nginx direct
 service nginx reload && service nginx restart
 
 #A partir de ce moment, on peut acceder au serveur sur un navigateur "localhost:8000"
 
 #Create a pair of RSA 2048 bits keys and the certificate
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/C=FR/ST=IDF/O=Fredo&The_Wailers/CN=mydomain.com" -addext "subjectAltName=DNS:mydomain.com" -keyout /etc/ssl/private/nginx.key -out /etc/ssl/certs/nginx.crt
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/C=FR/ST=IDF/O=Fredo&The_Wailers/CN=localhost" -addext "subjectAltName=DNS:mydomain.com" -keyout /etc/ssl/private/nginx.key -out /etc/ssl/certs/nginx.crt
+openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/C=FR/ST=IDF/O=Fredo&The_Wailers/CN=localhost" -keyout /etc/ssl/private/nginx.key -out /etc/ssl/certs/nginx.crt
 
 #to check : localhost
 
@@ -48,6 +53,13 @@ server	{
 			root /data/www;
 		}
 }
+
+#On cree une page vide de test
+mkdir -p /data/www
+echo "Hello World from 443" > /data/www/index.html
+
+#On lance nginx (entrypoint du conteneur)
+nginx &
 
 #On recharge la conf
 nginx -s reload
@@ -184,5 +196,3 @@ To configure HTTPS server :
 
 (!) ATTENTION :
 - ssl_protocols TLSv1.2 TLSv1.3; a precisier (cf sujet Inception)
-
-Create self-signed ssl certificate :
