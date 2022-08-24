@@ -48,15 +48,31 @@ lsof -i -P -n | grep LISTEN
 #connect to mysql server with client
 mysql -u root -p -h localhost
 
+
 https://stackoverflow.com/questions/19101243/error-1130-hy000-host-is-not-allowed-to-connect-to-this-mysql-server
-#add an external access
-CREATE USER 'root'@'%' IDENTIFIED BY 'some_pass';
-GRANT ALL PRIVILEGES ON *.* TO 'root'@'%';
+
+#add an external access to a user : admin for wordpress setup
+CREATE USER 'wp_master'@'%' IDENTIFIED BY 'fredo42';
+GRANT ALL PRIVILEGES ON *.* TO 'wp_master'@'%';
 FLUSH PRIVILEGES;
 kill and restart mysqld_safe
 
+
+https://www.wpwhitesecurity.com/secure-mysql-database-privileges-wordpress/
+#add a wordpress user with correct privileges : user for wordpress usage
+#replace with values according to wp-config.php file
+
+create user wordpress;
+grant select, insert, update, delete on wp.* to 'wordpress'@'host';
+
 #connect from outside 3307->3306:
-mysql -u root -p -h localhost -P 3307
+mysql -u root -p -h localhost -P 3307 --protocol=tcp
+
+#list users
+select host,user from mysql.user;
+
+#list users in vertical mode
+select * from mysql.user\G
 
 mysqld is actual mariadb Server Binary
 mysqld_safe is a wrapper around mysqld (server binary)
@@ -237,3 +253,73 @@ order on the fly with order by ASC or DESC in select statement
 order permanently with :
 ALTER TABLE table_name
 ORDER BY column1, column2
+
+Users :
+rmq :Pour voir les modifs
+select user,host from mysql.user;
+
+To create users, need CREATE USER privilege or INSERT privilege for mysql database
+create user adds a new row in mysql.user table
+
+CREATE USER user_name;
+
+CREATE OR REPLACE USER user_name is same as : DROP USER IF EXISTS user_name; CREATE USER name;
+CREATE USER IF NOT EXISTS returns warning instead of error if user_name already exists
+
+IDENTIFIED BY clause to provide password
+ex : create user if not exists fred identified by 'fredo_pass'
+Without identified by, user can connect without password ! (Dangerous)
+
+Account Names :
+user_name and host_name component
+'user_name'@'host_name' ('' obligatoire si hyphen ou special char)
+
+host_name are case insensitive
+% et _ wildcard available for host_name :
+% : any number of char, including 0
+- : any single char
+hostname : possibilite d'indiquer un domaine, une IP ou une range :
+ex : create user 'maria'@'247.150.130.0/255.255.255.0'
+
+user_name are case-sensitive
+empty user_name is anonymous and is allowed to match a login
+if multiples matching, mariadb select according to a pattern (exact host name priority over wildcard)
+
+anonymous account:
+user_name portion of account name is empty
+
+lock account by administrator :
+CREATE USER 'user_name'@'host_name' ACCOUNT LOCK
+
+GRANT :
+GRANT privileges or roles to accounts
+ex on existing user :
+grant all privileges on *.* to 'user'@'hostname';
+REVOKE to revoke privileges
+SHOW GRANTS FOR to determine what privileges an account has
+ex :
+show grants;
+show grants for current_user;
+show grants for 'root'@'localhost';
+
+GRANT allows to implicitly create an acount if it doesn't exist;
+grant usage on *.* to 'new_user'@'localhost' identified by 'pass';
+
+Privilege levels :
+USAGE : no privileges. used to change options like grant option or max_user_connections
+ALL PRIVILEGES : all available privileges. Does not grant special GRANT OPTION privilege.
+WITH GRANT OPTION clause or GRANT OPTION privilege : give user ability to grant privileges
+
+DB et tables privileges a voir sur le site mariadb :
+ex : grant create on *.* to 'new_user'@'localhost';
+grant select,insert on db.table to 'new_user'@'localhost';
+
+FLUSH :
+Clears and reload various internal caches used by mariaDB
+Must have the reload privilege
+FLUSH PRIVILEGES :
+reload all privileges from the privilege table in the mysql database
+
+Using mysqld_safe:
+--datadir=path : specify path to data directory
+--basedir=path : specify path to mariaDB installation directory

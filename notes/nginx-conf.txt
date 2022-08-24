@@ -1,5 +1,8 @@
+#MAJ php-fpm :
+docker network create my_net
+
 #Linux de test a partir d'une imgage debian :
-docker run --name nginx-test -ti -p 8000:443 debian:buster
+docker run --name nginx-test -ti --net=my_net -p 8000:443 debian:buster
 
 #Install nginx
 apt-get update -y && apt-get install -y nginx
@@ -11,7 +14,7 @@ apt-get update -y && apt-get install -y openssl
 apt-get update -y && apt-get install -y vim
 
 #Install curl for tests
-apt-get update -y && apt-get install -y vim
+apt-get update -y && apt-get install -y curl
 
 #Check status of nginx
 #service nginx status
@@ -27,7 +30,7 @@ service nginx reload && service nginx restart
 #A partir de ce moment, on peut acceder au serveur sur un navigateur "localhost:8000"
 
 #Create a pair of RSA 2048 bits keys and the certificate
-openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/C=FR/ST=IDF/O=Fredo&The_Wailers/CN=localhost" -addext "subjectAltName=DNS:mydomain.com" -keyout /etc/ssl/private/nginx.key -out /etc/ssl/certs/nginx.crt
+#openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/C=FR/ST=IDF/O=Fredo&The_Wailers/CN=localhost" -addext "subjectAltName=DNS:mydomain.com" -keyout /etc/ssl/private/nginx.key -out /etc/ssl/certs/nginx.crt
 openssl req -x509 -nodes -days 365 -newkey rsa:2048 -subj "/C=FR/ST=IDF/O=Fredo&The_Wailers/CN=localhost" -keyout /etc/ssl/private/nginx.key -out /etc/ssl/certs/nginx.crt
 
 #to check : localhost
@@ -54,6 +57,26 @@ server	{
 		}
 }
 
+v2 :
+server  {
+                listen  443 ssl;
+                ssl_certificate                 /etc/ssl/certs/nginx.crt;
+                ssl_certificate_key             /etc/ssl/private/nginx.key;
+                ssl_protocols                   TLSv1.2 TLSv1.3;
+                server_name                             localhost;
+
+                location / {
+                        root /data/www;
+                }
+
+                location ~ \.php$ {
+						root /data/www;
+						include /etc/nginx/fastcgi_params;
+                        fastcgi_pass            unix:/run/php/php7.3-fpm.sock;
+                        fastcgi_param           SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                }
+}
+
 #On cree une page vide de test
 mkdir -p /data/www
 echo "Hello World from 443" > /data/www/index.html
@@ -69,8 +92,29 @@ nginx -t
 
 #On check que le server repond
 curl https://localhost
+curl https://localhost --insecure
 
 #La conf est dans /etc/nginx
+
+
+#Partie php-fpm :
+apt-get update -y && apt-get install php-fpm -y
+
+#creer un fichier mini php:
+echo "<?php phpinfo(); ?>" >> /data/www/info.php
+
+#activer log:
+uncomment pm.status
+
+#lancer php-fpm et force foreground:
+mkdir -p /run/php
+php-fpm7.3 --nodaemonize &
+OU
+php-fpm7.3 -F &
+
+#chmod 777 du socket eventuellement
+chmod 777 /run/php/php7.3-fpm.sock
+
 
 Nginx : "Engine-x"
 Serveur russe d'Igor Sysoev depuis 2004
@@ -196,3 +240,10 @@ To configure HTTPS server :
 
 (!) ATTENTION :
 - ssl_protocols TLSv1.2 TLSv1.3; a precisier (cf sujet Inception)
+
+
+PHP :
+php requieres one of the 3 dependencies to exist on a machine:
+libapache2-mod-php
+php-fpm
+php-cgi
