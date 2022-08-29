@@ -8,7 +8,17 @@ apt-get update -y && apt-get install php-fpm vim -y
 echo "<?php phpinfo(); ?>" >> /data/www/info.php
 
 #activer log:
-uncomment pm.status
+#uncomment pm.status
+
+#chmod 777 du socket eventuellement
+#chmod 777 /run/php/php7.3-fpm.sock
+
+#Utiliser une IP au lieu d'un socket :
+vi /etc/php/7.3/fpm/pool.d/www.conf
+comment le listen
+listen = localhost:9000
+#vi /etc/nginx/sites-available/default -> plus besoin, fait dans le conteneur nginx
+#fastcgi_pass	localhost:9000
 
 #lancer php-fpm et force foreground:
 mkdir -p /run/php
@@ -16,11 +26,3 @@ php-fpm7.3 --nodaemonize &
 OU
 php-fpm7.3 -F &
 
-#chmod 777 du socket eventuellement
-chmod 777 /run/php/php7.3-fpm.sock
-
-#Utiliser une IP au lieu d'un socket :
-vi /etc/php/7.3/fpm/pool.d/www.conf
-listen = localhost:9000
-vi /etc/nginx/sites-available/default
-fastcgi_pass	localhost:9000

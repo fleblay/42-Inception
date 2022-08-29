@@ -7,6 +7,7 @@ docker volume create wp_db
 docker run --name nginx-test -ti --net=my_net -v wp_files:/data/www -p 8000:443 debian:buster
 
 #Install nginx
+apt-get update -y && apt-get install -y nginx openssl vim curl
 apt-get update -y && apt-get install -y nginx
 
 #Install openssl for self signed certificate
@@ -27,7 +28,7 @@ apt-get update -y && apt-get install -y curl
 
 #Reload and restart nginx after each change in /etc/nginx et /etc/nginx/nginx.conf
 #Finalement, a eviter, prefer un lancement de nginx direct
-service nginx reload && service nginx restart
+#service nginx reload && service nginx restart
 
 #A partir de ce moment, on peut acceder au serveur sur un navigateur "localhost:8000"
 
@@ -81,7 +82,7 @@ server  {
 }
 
 #On cree une page vide de test
-mkdir -p /data/www
+#mkdir -p /data/www -> pas besoin une fois volume monte
 echo "Hello World from 443" > /data/www/index.html
 
 #On lance nginx (entrypoint du conteneur)
@@ -98,8 +99,6 @@ curl https://localhost
 curl https://localhost --insecure
 
 #La conf est dans /etc/nginx
-
-
 
 
 
