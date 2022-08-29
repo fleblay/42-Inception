@@ -1,0 +1,26 @@
+#Linux de test a partir d'une imgage debian :
+docker run --name php-fpm-test -ti --net=my_net -v wp_file:/data/www -p 9000:9000 debian:buster
+
+#Partie php-fpm :
+apt-get update -y && apt-get install php-fpm vim -y
+
+#creer un fichier mini php:
+echo "<?php phpinfo(); ?>" >> /data/www/info.php
+
+#activer log:
+uncomment pm.status
+
+#lancer php-fpm et force foreground:
+mkdir -p /run/php
+php-fpm7.3 --nodaemonize &
+OU
+php-fpm7.3 -F &
+
+#chmod 777 du socket eventuellement
+chmod 777 /run/php/php7.3-fpm.sock
+
+#Utiliser une IP au lieu d'un socket :
+vi /etc/php/7.3/fpm/pool.d/www.conf
+listen = localhost:9000
+vi /etc/nginx/sites-available/default
+fastcgi_pass	localhost:9000

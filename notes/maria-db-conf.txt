@@ -1,5 +1,5 @@
 #Linux de test a partir d'une imgage debian :
-docker run --name maria-test -ti -p 3307:3306 debian:buster
+docker run --name maria-test -ti --net=my_net -v wp_db:/var/lib/mysql -p 3306:3306 debian:buster
 
 #Install mariadb client and server
 apt-get update -y && apt-get install -y mariadb-client mariadb-server
@@ -47,6 +47,12 @@ lsof -i -P -n | grep LISTEN
 
 #connect to mysql server with client
 mysql -u root -p -h localhost
+
+
+
+
+
+
 
 
 https://stackoverflow.com/questions/19101243/error-1130-hy000-host-is-not-allowed-to-connect-to-this-mysql-server

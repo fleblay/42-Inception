@@ -1,8 +1,10 @@
 #MAJ php-fpm :
 docker network create my_net
+docker volume create wp_files
+docker volume create wp_db
 
 #Linux de test a partir d'une imgage debian :
-docker run --name nginx-test -ti --net=my_net -p 8000:443 debian:buster
+docker run --name nginx-test -ti --net=my_net -v wp_files:/data/www -p 8000:443 debian:buster
 
 #Install nginx
 apt-get update -y && apt-get install -y nginx
@@ -72,7 +74,8 @@ server  {
                 location ~ \.php$ {
 						root /data/www;
 						include /etc/nginx/fastcgi_params;
-                        fastcgi_pass            unix:/run/php/php7.3-fpm.sock;
+                        #fastcgi_pass            unix:/run/php/php7.3-fpm.sock;
+                        fastcgi_pass            php-fpm-test:9000;
                         fastcgi_param           SCRIPT_FILENAME $document_root$fastcgi_script_name;
                 }
 }
@@ -97,23 +100,7 @@ curl https://localhost --insecure
 #La conf est dans /etc/nginx
 
 
-#Partie php-fpm :
-apt-get update -y && apt-get install php-fpm -y
 
-#creer un fichier mini php:
-echo "<?php phpinfo(); ?>" >> /data/www/info.php
-
-#activer log:
-uncomment pm.status
-
-#lancer php-fpm et force foreground:
-mkdir -p /run/php
-php-fpm7.3 --nodaemonize &
-OU
-php-fpm7.3 -F &
-
-#chmod 777 du socket eventuellement
-chmod 777 /run/php/php7.3-fpm.sock
 
 
 Nginx : "Engine-x"
@@ -247,3 +234,23 @@ php requieres one of the 3 dependencies to exist on a machine:
 libapache2-mod-php
 php-fpm
 php-cgi
+
+https://www.tecmint.com/connect-nginx-to-php-fpm/
+PHP-FPM tourne en background et ecoute des requetes CGI envoyees par nginx qui fonctionne du coup en tant que reverse proxy (interface permet a quelqu'un d'acceder a un server de depuis internet)
+Ecoute des requettes depuis un socket UNIX domain ou un socket TCP/IP
+UNIX Domain (IPC) : Inter-process communication. For processes runing on same operating system
+Security : Only local processes with right permissions can use it, so very secure.
+Internet Domain (TCP/IP) : over a network
+Security : risk, unless firewall
+UNIX domain sockets : faster
+TCP/IP : more scalable
+
+PHP-FMP listen address :
+Via a ressource pool conf file.
+You can run multiple pools of processess with different settings
+default is www located /etc/php/7.3/fpm/pool.d/www.conf
+change listen conf :
+listen = listen_socket_name.sock
+Nginx runs as www-data as default, so the socket needs to have the rights access. To change :
+listen.owner
+listen.group
