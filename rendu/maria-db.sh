@@ -8,10 +8,10 @@ RESET=\\e[0m
 if ! test -e /var/lib/mysql/wp_db
 then
 	echo -e "${YELLOW}DB init${RESET}"
-	mysqld_safe &
-	while ! mysqladmin ping > /dev/null
+	mysqld &
+	while ! mysqladmin ping > /dev/null 2>&1
 	do
-		echo -e "${RED}Waiting for mysqld server to be running${RESET}" && sleep 1
+		echo -e "${RED}Waiting for mysqld server to be running${RESET}" && sleep 0.1
 	done
 	echo -e "${GREEN}mysqld server is up !${RESET}"
 	mysql -e "update mysql.user set password=password('42'), plugin='' where user='root'"
