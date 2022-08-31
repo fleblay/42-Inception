@@ -1,14 +1,18 @@
 #Linux de test a partir d'une imgage debian :
-docker run --name php-fpm-test -ti --net=my_net -v wp_file:/data/www -p 9000:9000 debian:buster
+docker run --name php-fpm-test -ti --net=my_net -v wp_files:/var/www/html -p 9000:9000 debian:buster
 
 #Partie php-fpm :
-apt-get update -y && apt-get install php-fpm vim -y
+apt-get update -y && apt-get install php-fpm php7.3-mysql vim curl mariadb-client -y
 
 #creer un fichier mini php:
-echo "<?php phpinfo(); ?>" >> /data/www/info.php
+echo "<?php phpinfo(); ?>" >> var/www/hmtl/info.php
 
-#activer log:
-#uncomment pm.status
+#activer log in:
+mkdir -p /var/log
+vi /etc/php/7.3/fpm/pool.d/www.conf
+uncomment access.log
+access.log = /var/log/$pool.access.log
+uncomment access.format
 
 #chmod 777 du socket eventuellement
 #chmod 777 /run/php/php7.3-fpm.sock
@@ -16,9 +20,26 @@ echo "<?php phpinfo(); ?>" >> /data/www/info.php
 #Utiliser une IP au lieu d'un socket :
 vi /etc/php/7.3/fpm/pool.d/www.conf
 comment le listen
-listen = localhost:9000
-#vi /etc/nginx/sites-available/default -> plus besoin, fait dans le conteneur nginx
-#fastcgi_pass	localhost:9000
+listen = 9000
+
+#Download wordpress CLI :
+cd /var/www/html/
+curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
+chmod a+x wp-cli.phar
+mv wp-cli.phar /usr/local/bin/wp
+wp core download --path=/var/www/html --allow-root
+#Maria-db container needs to be running
+wp config create --path=/var/www/html --dbname=wp_db --dbuser=wp_master --dbpass=fredo42 --dbhost=maria-test --allow-root
+#Be sure to have php7.3-mysql installed
+wp core install --path=/var/www/html --url=localhost --title=Inception --admin_user=fred --admin_password=42 --admin_email='fle-blay@student.42.fr' --allow-root
+wp theme install twentysixteen --activate --path=/var/www/html --allow-root
+
+#check everyting worked
+wp core is-installed --allow-root
+echo $?
+
+#running an update
+#wp core update --path=/var/www/html --allow-root
 
 #lancer php-fpm et force foreground:
 mkdir -p /run/php
@@ -26,3 +47,6 @@ php-fpm7.3 --nodaemonize &
 OU
 php-fpm7.3 -F &
 
+
+
+https://wp-cli.org/

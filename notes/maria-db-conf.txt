@@ -1,18 +1,51 @@
+MANUAL BUILD
+
+docker build . -t maria-db-buster
+docker create --name maria-db --net=my_net -v wp_db:/var/lib/mysql -p 3306:3306 maria-db-buster "mysqld"
+docker start maria-db -a -i
+#Pour pouvoir quitter, on lance puis on attach
+#docker start maria-db && docker attach --sig-proxy=false maria-db
+
+BUILD
+
+docker run --name maria-db -ti --net=my_net -v wp_db:/var/lib/mysql -p 3306:3306 debian:buster
+apt-get update -y && apt-get install -y mariadb-client mariadb-server vim
+
+SCRIPT
+
+if test -e /var/lib/mysql/wp_db
+then
+	echo -e "db init"
+	mysqld_safe &
+	mysql -e "update mysql.user set password=password('42'), plugin='' where user='root'"
+	mysql -e "create database wp_db"
+	mysql -e "grant all privileges on *.* to 'wp_master'@'%' identified by 'fredo42'"
+	mysql -e "create user 'wp_user'@'%' identified by 'user42'"
+	mysql -e "grant select, update, delete on wp_db.* to 'wp_user'@'%'"
+	mysql -e "flush privileges"
+	kill $(cat /var/run/mysqld/mysqld.pid)
+	sed -i "s/.*bind-address.*/bind-address = 0.0.0.0/" /etc/mysql/mariadb.conf.d/50-server.cnf
+else
+	echo -e "db already initiated"
+fi
+exec mysql_safe
+
+
+
+RESEARCH
+
 #Linux de test a partir d'une imgage debian :
-docker run --name maria-test -ti --net=my_net -v wp_db:/var/lib/mysql -p 3306:3306 debian:buster
+docker run --name maria-db -ti --net=my_net -v wp_db:/var/lib/mysql -p 3306:3306 debian:buster
 
 #Install mariadb client and server
-apt-get update -y && apt-get install -y mariadb-client mariadb-server
-
-#Install mysqldump
-apt-get update -y && apt-get install -y mariadb-client mariadb-server
+apt-get update -y && apt-get install -y mariadb-client mariadb-server vim
 
 #Install man pages for help
 apt-get install -y man-db less
 
 #add user fred
-useradd fred
-passwd fred
+#useradd fred
+#passwd fred
 
 #Check mysql running by gettin version
 mysqld --version
@@ -29,16 +62,46 @@ OU
 service --status-all
 
 #Run secure install -> check les infos de config via des param
-mysql_secure_installation
+#mysql_secure_installation -> script plutot pour faire la meme chose en mode script
+#root/42
+Script :
+https://stackoverflow.com/questions/24270733/automate-mysql-secure-installation-with-echo-command-via-a-shell-script
+
+# Make sure that NOBODY can access the server without a password
+mysql -e "update mysql.user SET Password = PASSWORD('42') WHERE User = 'root'"
+# Kill the anonymous users
+mysql -e "DROP USER ''@'localhost'"
+# Because our hostname varies we'll use some Bash magic here.
+mysql -e "DROP USER ''@'$(hostname)'"
+# Kill off the demo database
+mysql -e "DROP DATABASE test"
+# Make our changes take effect
+mysql -e "FLUSH PRIVILEGES"
+# Any subsequent tries to run queries this way will get access denied because lack of usr/pwd param
+
+#check passwords :
+select host,user,password,plugin from mysql.user;
+
 
 #allow tcp connexion from everywhere instead of just localhost
--> change bind address to 0.0.0.0 in /etc/mysql/mariadb.conf.d/50-server.conf
+#-> change bind address to 0.0.0.0 in /etc/mysql/mariadb.conf.d/50-server.cnf
+sed -i "s/.*bind-address.*/bind-address = 0.0.0.0/" /etc/mysql/mariadb.conf.d/50-server.cnf
 
-
+#.* regex for any amount of char
 
 #restart mysqld to enforce changes
 kill %1
 mysqld_safe &
+
+#adding wp user
+mysql -u root -p
+create user 'wp_master'@'%' identified by 'fredo42';
+grant all privileges on *.* to 'wp_master';
+create database wp_db;
+
+#check it worked
+select User from mysql.user;
+show grants for 'wp_master'@'%';
 
 #check process listening
 ss -tunlp
@@ -46,10 +109,13 @@ OR
 lsof -i -P -n | grep LISTEN
 
 #connect to mysql server with client
-mysql -u root -p -h localhost
+#mysql -u root -p -h localhost
 
 
+mysql -u root -p -h maria-test -P 3306 --protocol=tcp
 
+
+mysqldump --user='username' --password='password' --add-locks --all-databases > db_backup.sql
 
 
 

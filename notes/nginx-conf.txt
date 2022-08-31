@@ -4,7 +4,8 @@ docker volume create wp_files
 docker volume create wp_db
 
 #Linux de test a partir d'une imgage debian :
-docker run --name nginx-test -ti --net=my_net -v wp_files:/data/www -p 8000:443 debian:buster
+docker run --name nginx-test -ti --net=my_net -v wp_files:/var/www/html -p 443:443 debian:buster
+#docker run --name nginx-test -ti --net=my_net -v wp_files:/var/www/html -p 8000:443 debian:buster
 
 #Install nginx
 apt-get update -y && apt-get install -y nginx openssl vim curl
@@ -56,24 +57,24 @@ server	{
 		server_name				localhost;
 
 		location / {
-			root /data/www;
+			root /var/www/hmtl;
 		}
 }
 
 v2 :
 server  {
-                listen  443 ssl;
+                listen  443 ssl default_server;
                 ssl_certificate                 /etc/ssl/certs/nginx.crt;
                 ssl_certificate_key             /etc/ssl/private/nginx.key;
                 ssl_protocols                   TLSv1.2 TLSv1.3;
                 server_name                             localhost;
 
                 location / {
-                        root /data/www;
+                        root /var/www/html;
                 }
 
                 location ~ \.php$ {
-						root /data/www;
+						root /var/www/html;
 						include /etc/nginx/fastcgi_params;
                         #fastcgi_pass            unix:/run/php/php7.3-fpm.sock;
                         fastcgi_pass            php-fpm-test:9000;
@@ -81,9 +82,41 @@ server  {
                 }
 }
 
+v3 :
+server  {
+				listen						443 ssl default_server;
+                ssl_certificate				/etc/ssl/certs/nginx.crt;
+                ssl_certificate_key			/etc/ssl/private/nginx.key;
+                ssl_protocols				TLSv1.2 TLSv1.3;
+				root /var/www/html;
+
+                location ~ \.php$ {
+						include				fastcgi_params;
+                        #fastcgi_pass		unix:/run/php/php7.3-fpm.sock;
+                        fastcgi_pass		php-fpm-test:9000;
+                        fastcgi_param		SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                }
+}
+v4 :
+server  {
+                listen                                  443 ssl default_server;
+                ssl_certificate                         /etc/ssl/certs/nginx.crt;
+                ssl_certificate_key                     /etc/ssl/private/nginx.key;
+                ssl_protocols                           TLSv1.2 TLSv1.3;
+                index                                   index.php;
+                root /var/www/html;
+
+                location ~ \.php$ {
+                        include                         fastcgi_params;
+                        fastcgi_pass            unix:/run/php/php7.3-fpm.sock;
+                        #fastcgi_pass           php-fpm-test:9000;
+                        fastcgi_param           SCRIPT_FILENAME $document_root$fastcgi_script_name;
+                }
+}
+
 #On cree une page vide de test
-#mkdir -p /data/www -> pas besoin une fois volume monte
-echo "Hello World from 443" > /data/www/index.html
+#mkdir -p /var/www/html -> pas besoin une fois volume monte
+echo "Hello World from 443" > /var/www/html
 
 #On lance nginx (entrypoint du conteneur)
 nginx &
