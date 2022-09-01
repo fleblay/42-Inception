@@ -10,13 +10,18 @@ build :
 	docker compose build
 
 stop :
+	docker compose stop -t 5
+
+down :
 	docker compose down
 
-full-stop :
+full-down :
 	docker compose down --rmi all --volumes
 
 re : full-stop
 	make all
+
+#Utilities for all containers (not only the one listed in Docker-compose file)
 
 stop-all :
 ifneq ($(strip $(RUNNING_CONTAINERS)), )
