@@ -1,3 +1,13 @@
+MANUAL BUILD
+
+docker build . -t nginx-buster
+docker create --name nginx --net=my_net -v wp_files:/var/www/html -p 443:443 nginx-buster "nginx" "-g" "daemon off;"
+docker start nginx -a -i
+#Pour pouvoir quitter, on lance puis on attach
+docker start nginx && docker attach --sig-proxy=false nginx
+
+
+
 #MAJ php-fpm :
 docker network create my_net
 docker volume create wp_files

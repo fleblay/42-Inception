@@ -1,3 +1,13 @@
+MANUAL BUILD
+
+docker build . -t php-fpm-buster
+docker create --name php-fpm --net=my_net -v wp_files:/var/www/html -p 9000:9000 php-fpm-buster "php-fpm7.3" "--nodaemonize"
+docker start php-fpm -a -i
+#Pour pouvoir quitter, on lance puis on attach
+docker start php-fpm && docker attach --sig-proxy=false php-fpm
+
+
+
 #Linux de test a partir d'une imgage debian :
 docker run --name php-fpm-test -ti --net=my_net -v wp_files:/var/www/html -p 9000:9000 debian:buster
 
