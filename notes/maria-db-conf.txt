@@ -1,10 +1,16 @@
+DEBUG
+
+mysql_safe a utiliser au lieu de mysql pour l'init
+mysql pour pour le service final pour avoir le pid 1
+penser a voir le log dans /var/log/mysql/error.log
+
 MANUAL BUILD
 
 docker build . -t maria-db-buster
 docker create --name maria-db --net=my_net -v wp_db:/var/lib/mysql -p 3306:3306 maria-db-buster "mysqld"
 docker start maria-db -a -i
 #Pour pouvoir quitter, on lance puis on attach
-#docker start maria-db && docker attach --sig-proxy=false maria-db
+docker start maria-db && docker attach --sig-proxy=false maria-db
 
 BUILD
 
