@@ -1,5 +1,10 @@
 FROM debian:buster
 
+ENV WP_ADMIN_USERNAME	$WP_ADMIN_USERNAME
+ENV WP_ADMIN_PASS		$WP_ADMIN_PASS
+ENV WP_USER_USERNAME	$WP_USER_USERNAME
+ENV WP_USER_PASS		$WP_USER_PASS
+
 RUN apt-get update -y && apt-get install -y mariadb-client mariadb-server
 #RUN apt-get update -y && apt-get install -y mariadb-client mariadb-server procps vim
 

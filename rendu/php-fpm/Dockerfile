@@ -1,5 +1,8 @@
 FROM debian:buster
 
+ENV WP_ADMIN_USERNAME	$WP_ADMIN_USERNAME
+ENV WP_ADMIN_PASS		$WP_ADMIN_PASS
+
 RUN apt-get update -y && apt-get install -y php-fpm php7.3-mysql mariadb-client curl
 #RUN apt-get update -y && apt-get install -y php-fpm php7.3-mysql mariadb-client curl vim procps
 

@@ -26,9 +26,9 @@ then
 	echo -e "${GREEN}mysqld server is up !${RESET}"
 	mysql -e "update mysql.user set password=password('42'), plugin='' where user='root'"
 	mysql -e "create database wp_db"
-	mysql -e "grant all privileges on *.* to 'wp_master'@'%' identified by 'fredo42'"
-	mysql -e "create user 'wp_user'@'%' identified by 'user42'"
-	mysql -e "grant select, update, delete on wp_db.* to 'wp_user'@'%'"
+	mysql -e "grant all privileges on *.* to '$WP_ADMIN_USERNAME'@'%' identified by '$WP_ADMIN_PASS'"
+	mysql -e "create user '$WP_USER_USERNAME'@'%' identified by '$WP_ADMIN_PASS'"
+	mysql -e "grant select, update, delete on wp_db.* to '$WP_USER_USERNAME'@'%'"
 	mysql -e "flush privileges"
 	echo -e "${YELLOW}DB init done${RESET}"
 else

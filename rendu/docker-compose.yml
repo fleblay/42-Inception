@@ -9,6 +9,8 @@ services:
       - wp_db:/var/lib/mysql
     ports:
       - "3306:3306"
+    env_file:
+      - .env
     command: ["mysqld"]
   php-fpm:
     build: "./php-fpm"
@@ -20,6 +22,8 @@ services:
     ports:
       - "9000:9000"
     command: ["php-fpm7.3", "--nodaemonize"]
+    env_file:
+      - .env
     depends_on:
       - maria-db
   nginx:

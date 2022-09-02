@@ -22,7 +22,7 @@ then
 	mv wp-cli.phar /usr/local/bin/wp
 	wp core download --path=/var/www/html --allow-root
 	#Maria-db container needs to be running
-	wp config create --path=/var/www/html --dbname=wp_db --dbuser=wp_master --dbpass=fredo42 --dbhost=maria-db --allow-root
+	wp config create --path=/var/www/html --dbname=wp_db --dbuser=$WP_ADMIN_USERNAME --dbpass=$WP_ADMIN_PASS --dbhost=maria-db --allow-root
 	wp core install --path=/var/www/html --url=localhost --title=Inception --admin_user=fred --admin_password=42 --admin_email='fle-blay@student.42.fr' --allow-root
 	echo -e "${YELLOW}WP init done${RESET}"
 else
