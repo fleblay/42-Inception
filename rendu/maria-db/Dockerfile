@@ -2,6 +2,7 @@ FROM debian:buster
 
 RUN apt-get update -y && apt-get install -y mariadb-client mariadb-server
 #RUN apt-get update -y && apt-get install -y mariadb-client mariadb-server procps vim
+
 COPY ./maria-db.sh /
 RUN chmod a+x /maria-db.sh
 

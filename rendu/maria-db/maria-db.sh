@@ -6,19 +6,20 @@ YELLOW=\\e[33m
 RESET=\\e[0m
 
 sed -i "s/.*bind-address.*/bind-address = 0.0.0.0/" /etc/mysql/mariadb.conf.d/50-server.cnf
-mysqld_safe --log-error=/var/lib/mysql/.error.log &
+mysqld_safe --log-error=/var/lib/mysql/.error.log --skip-syslog &
 while ! mysqladmin ping > /dev/null 2>&1
 do
 	echo -e "${RED}Maria container : Waiting for mysqld server to be running${RESET}" && sleep 1
 done
 echo -e "${GREEN}Maria container : mysqld server is up !${RESET}"
 
+#FOR DEBUGGING PURPOSES
 #echo -e "${YELLOW}---------------ERROR LOG BEGIN-----------------${RESET}"
 #cat /var/lib/mysql/.error.log | grep -e "Warning" -e "Error"
 #cat /var/lib/mysql/.error.log
 #echo -e "${YELLOW}---------------ERROR LOG END-------------------${RESET}"
 
-echo -e "${YELLOW}Testing if DB needs to be initializedt${RESET}"
+echo -e "${YELLOW}Testing if DB needs to be initialized${RESET}"
 if ! test -e /var/lib/mysql/wp_db
 then
 	echo -e "${YELLOW}DB init${RESET}"

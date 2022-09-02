@@ -1,6 +1,7 @@
 FROM debian:buster
 
-RUN apt-get update -y && apt-get install -y php-fpm php7.3-mysql vim curl mariadb-client vim procps
+RUN apt-get update -y && apt-get install -y php-fpm php7.3-mysql mariadb-client curl
+#RUN apt-get update -y && apt-get install -y php-fpm php7.3-mysql mariadb-client curl vim procps
 
 COPY ./php-fpm.sh /
 RUN chmod a+x /php-fpm.sh
