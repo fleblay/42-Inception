@@ -1,0 +1,43 @@
+version: "3.9"
+services:
+  maria-db:
+    build: "./maria-db"
+    container_name: "maria-db"
+    networks:
+      - my_net
+    volumes:
+      - wp_db:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    command: ["mysqld"]
+  php-fpm:
+    build: "./php-fpm"
+    container_name: "php-fpm"
+    networks:
+      - my_net
+    volumes:
+      - wp_files:/var/www/html
+    ports:
+      - "9000:9000"
+    command: ["php-fpm7.3", "--nodaemonize"]
+    depends_on:
+      - maria-db
+  nginx:
+    build: "./nginx"
+    container_name: "nginx"
+    networks:
+      - my_net
+    volumes:
+      - wp_files:/var/www/html
+    ports:
+      - "443:443"
+    command: ["nginx", "-g", "daemon off;"]
+    depends_on:
+      - php-fpm
+
+networks:
+  my_net:
+    driver : bridge
+volumes:
+  wp_db:
+  wp_files:

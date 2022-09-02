@@ -9,4 +9,5 @@ VOLUME wp_db
 EXPOSE 3306
 
 ENTRYPOINT ["/maria-db.sh"]
-CMD ["this should be overloaded with executable name and parameter for container"]
+#CMD arg should be overloaded with executable name and parameter for container
+CMD [""]

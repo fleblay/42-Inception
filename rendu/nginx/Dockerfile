@@ -15,4 +15,5 @@ VOLUME wp_files
 EXPOSE 443
 
 ENTRYPOINT ["/nginx.sh"]
-CMD ["this should be overloaded with executable name and parameter for container"]
+#CMD arg should be overloaded with executable name and parameter for container
+CMD [""]

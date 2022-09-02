@@ -10,4 +10,5 @@ VOLUME wp_files
 EXPOSE 9000
 
 ENTRYPOINT ["/php-fpm.sh"]
-CMD ["this should be overloaded with executable name and parameter for container"]
+#CMD arg should be overloaded with executable name and parameter for container
+CMD [""]
