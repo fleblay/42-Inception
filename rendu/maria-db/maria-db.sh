@@ -24,11 +24,11 @@ if ! test -e /var/lib/mysql/wp_db
 then
 	echo -e "${YELLOW}DB init${RESET}"
 	echo -e "${GREEN}mysqld server is up !${RESET}"
-	mysql -e "update mysql.user set password=password('42'), plugin='' where user='root'"
-	mysql -e "create database wp_db"
-	mysql -e "grant all privileges on *.* to '$WP_ADMIN_USERNAME'@'%' identified by '$WP_ADMIN_PASS'"
-	mysql -e "create user '$WP_USER_USERNAME'@'%' identified by '$WP_ADMIN_PASS'"
-	mysql -e "grant select, update, delete on wp_db.* to '$WP_USER_USERNAME'@'%'"
+	mysql -e "update mysql.user set password=password('$MYSQL_ROOT_PASS'), plugin='' where user='root'"
+	mysql -e "create database $MYSQL_WP_DB_NAME"
+	mysql -e "grant all privileges on *.* to '$MYSQL_WP_ADMIN_USERNAME'@'%' identified by '$MYSQL_WP_ADMIN_PASS'"
+	mysql -e "create user '$MYSQL_WP_USER_USERNAME'@'%' identified by '$MYSQL_WP_ADMIN_PASS'"
+	mysql -e "grant select, update, delete on $MYSQL_WP_DB_NAME.* to '$MYSQL_WP_USER_USERNAME'@'%'"
 	mysql -e "flush privileges"
 	echo -e "${YELLOW}DB init done${RESET}"
 else

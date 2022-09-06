@@ -17,14 +17,22 @@ if ! test -e /var/www/html/index.php
 then
 	echo -e "${YELLOW}WP init${RESET}"
 	cd /var/www/html/
-	curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar
-	chmod a+x wp-cli.phar
-	mv wp-cli.phar /usr/local/bin/wp
 	wp core download --path=/var/www/html --allow-root
 	#Maria-db container needs to be running
-	wp config create --path=/var/www/html --dbname=wp_db --dbuser=$WP_ADMIN_USERNAME --dbpass=$WP_ADMIN_PASS --dbhost=maria-db --allow-root
-	wp core install --path=/var/www/html --url=localhost --title=Inception --admin_user=fred --admin_password=42 --admin_email='fle-blay@student.42.fr' --allow-root
+	wp config create --path=/var/www/html --dbname=$MYSQL_WP_DB_NAME --dbuser=$MYSQL_WP_ADMIN_USERNAME --dbpass=$MYSQL_WP_ADMIN_PASS --dbhost=maria-db --allow-root
+	wp core install --path=/var/www/html --url=localhost --title=Inception --admin_user=$WP_WP_ADMIN_USERNAME --admin_password=$WP_WP_ADMIN_PASS --admin_email='fle-blay@student.42.fr' --allow-root
 	echo -e "${YELLOW}WP init done${RESET}"
+	echo -e "${YELLOW}Adding redis config${RESET}"
+	wp config set WP_CACHE true --path=/var/www/html --allow-root
+	wp config set WP_REDIS_HOST redis --path=/var/www/html --allow-root
+	wp config set WP_REDIS_PORT 6379 --path=/var/www/html --allow-root
+	wp config set WP_REDIS_TIMEOUT 1 --path=/var/www/html --allow-root
+	wp config set WP_REDIS_READ_TIMEOUT 1 --path=/var/www/html --allow-root
+	wp config set WP_REDIS_DATABASE 0 --path=/var/www/html --allow-root
+	wp config set WP_REDIS_SCHEME tcp --path=/var/www/html --allow-root
+	wp plugin install redis-cache --path=/var/www/html --allow-root
+	wp plugin activate redis-cache --path=/var/www/html --allow-root
+	wp redis enable --path=/var/www/html --allow-root
 else
 	echo -e "${GREEN}WP already OK${RESET}"
 fi

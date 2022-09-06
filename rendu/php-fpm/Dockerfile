@@ -1,10 +1,17 @@
 FROM debian:buster
 
-ENV WP_ADMIN_USERNAME	$WP_ADMIN_USERNAME
-ENV WP_ADMIN_PASS		$WP_ADMIN_PASS
+ENV MYSQL_WP_ADMIN_USERNAME=$MYSQL_WP_ADMIN_USERNAME \
+	MYSQL_WP_ADMIN_PASS=$MYSQL_WP_ADMIN_PASS \
+	MYSQL_WP_DB_NAME=$MYSQL_WP_DB_NAME \
+	WP_WP_ADMIN_USERNAME=$WP_WP_ADMIN_USERNAME \
+	WP_WP_ADMIN_PASS=$WP_WP_ADMIN_PASS
 
 RUN apt-get update -y && apt-get install -y php-fpm php7.3-mysql mariadb-client curl
-#RUN apt-get update -y && apt-get install -y php-fpm php7.3-mysql mariadb-client curl vim procps
+#Extra tools for debug
+#RUN apt-get update -y && apt-get install -y curl vim procps
+RUN curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar \
+	&& chmod a+x wp-cli.phar \
+	&& mv wp-cli.phar /usr/local/bin/wp
 
 COPY ./php-fpm.sh /
 RUN chmod a+x /php-fpm.sh

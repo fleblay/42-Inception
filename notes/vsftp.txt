@@ -1,0 +1,38 @@
+docker create --name vsftp --net=rendu_my_net -p 4242:21 -p 10100-10102:10100-10102 -v rendu_wp_files:/var/www/html --env PUBLIC_HOST=vsftp debian:buster /bin/bash -c "while true; do sleep 1; done;"
+docker start vsftp
+docker exec -ti vsftp /bin/bash
+
+apt-get update -y && apt-get install -y vsftpd vim procps
+
+#Dans un fichier de conf
+vim /etc/vsftpd.conf
+listen=YES
+comment listen_ipv6=YES
+uncomment write_enable=YES
+uncomment local_umask=022
+uncomment chroot_local_user=YES
+
+add at bottom :
+
+userlist_enable=YES
+userlist_file=/etc/vsftpd.userlist
+userlist_deny=NO
+pasv_enable=YES
+pasv_max_port=10102
+pasv_min_port=10100
+pasv_address=vsftp
+pasv_addr_resolve=YES
+
+mkdir -p /var/run/vsftpd/empty
+
+echo fle-blay > /etc/vsftpd.userlist
+useradd fle-blay
+usermod --home /var/www/html fle-blay
+echo -e "42\n42" | passwd fle-blay
+
+vsftpd &
+
+sur la machine qui fera tourner le client
+
+sudo apt-get install yafc
+yafc fle-blay@localhost:4242

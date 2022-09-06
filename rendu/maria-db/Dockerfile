@@ -1,12 +1,15 @@
 FROM debian:buster
 
-ENV WP_ADMIN_USERNAME	$WP_ADMIN_USERNAME
-ENV WP_ADMIN_PASS		$WP_ADMIN_PASS
-ENV WP_USER_USERNAME	$WP_USER_USERNAME
-ENV WP_USER_PASS		$WP_USER_PASS
+ENV MYSQL_WP_ADMIN_USERNAME=$MYSQL_WP_ADMIN_USERNAME \
+	MYSQL_WP_ADMIN_PASS=$MYSQL_WP_ADMIN_PASS \
+	MYSQL_WP_USER_USERNAME=$MYSQL_WP_USER_USERNAME \
+	MYSQL_WP_USER_PASS=$MYSQL_WP_USER_PASS \
+	MYSQL_WP_DB_NAME=$MYSQL_WP_DB_NAME \
+	MYSQL_ROOT_PASS=$MYSQL_ROOT_PASS
 
 RUN apt-get update -y && apt-get install -y mariadb-client mariadb-server
-#RUN apt-get update -y && apt-get install -y mariadb-client mariadb-server procps vim
+#Extra tools for debug
+#RUN apt-get update -y && apt-get install -y procps vim
 
 COPY ./maria-db.sh /
 RUN chmod a+x /maria-db.sh

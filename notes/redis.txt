@@ -1,0 +1,67 @@
+docker create --name redis --net=rendu_my_net -p 6379:6379 debian:buster /bin/bash -c "while true; do sleep 1; done;"
+docker start redis
+docker exec -ti redis /bin/bash
+
+apt-get update -y && apt-get install -y redis vim procps curl
+
+#edit conf file
+vi /etc/redis/redis.conf
+comment bind
+protected-mode no
+maxmemory 512mb
+comment daemonize
+
+#create dir for pid an log
+#mkdir -p /var/run/redis
+
+#Launch redis server
+#redis-server '--protected-mode no' &
+redis-server /etc/redis/redis.conf &
+
+#check redis is running
+#redis-cli ping
+
+#ajouter dans le wp-config.php
+
+#LIGNE 40
+
+wp config set WP_CACHE true --path=/var/www/html --allow-root
+wp config set WP_REDIS_HOST redis --path=/var/www/html --allow-root
+wp config set WP_REDIS_PORT 6379 --path=/var/www/html --allow-root
+wp config set WP_REDIS_TIMEOUT 1 --path=/var/www/html --allow-root
+wp config set WP_REDIS_READ_TIMEOUT 1 --path=/var/www/html --allow-root
+wp config set WP_REDIS_DATABASE 0 --path=/var/www/html --allow-root
+wp config set WP_REDIS_SCHEME tcp --path=/var/www/html --allow-root
+
+#A faire avec des :
+#wp config set WP_CACHE true --path=/var/www/html --allow-root
+
+
+
+
+
+#Dans le container php-fpm
+wp plugin install redis-cache --activate --path=/var/www/html --allow-root
+
+#enable redis objet caching
+wp redis enable --path=/var/www/html --allow-root
+
+#check redis plugin is working
+#wp redis status --path=/var/www/html --allow-root
+
+#update
+#wp redis update-dropin --path=/var/www/html --allow-root
+
+
+
+
+
+
+To quit redis and make sure data is written on disk :
+redis-cli shutdown
+
+Save data on disk:
+redis-cli save
+
+Place where cache is stored :
+/var/lib/redis/dump.rdb
