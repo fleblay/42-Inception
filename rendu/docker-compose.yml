@@ -12,6 +12,7 @@ services:
     env_file:
       - .env
     command: ["mysqld"]
+    restart: on-failure
   php-fpm:
     build: "./php-fpm"
     container_name: "php-fpm"
@@ -26,6 +27,7 @@ services:
       - .env
     depends_on:
       - maria-db
+    restart: on-failure
   nginx:
     build: "./nginx"
     container_name: "nginx"
@@ -38,6 +40,7 @@ services:
     command: ["nginx", "-g", "daemon off;"]
     depends_on:
       - php-fpm
+    restart: on-failure
   redis:
     build: "./redis"
     container_name: "redis"
@@ -48,6 +51,26 @@ services:
     command: ["redis-server", "/etc/redis/redis.conf"]
     depends_on:
       - php-fpm
+    restart: on-failure
+  vsftp:
+    build:
+      context: "./vsftp"
+      args:
+        - FTP_USERNAME=${FTP_USERNAME}
+        - FTP_PASS=${FTP_PASS}
+        - PUBLIC_HOST=${PUBLIC_HOST}
+    container_name: "vsftp"
+    networks:
+      - my_net
+    volumes:
+      - wp_files:/var/www/html
+    ports:
+      - "4242:21"
+      - "10100-10102:10100-10102"
+    command: ["/usr/sbin/vsftpd", "/etc/vsftpd.conf"]
+    env_file:
+      - .env
+    restart: on-failure
 
 networks:
   my_net:

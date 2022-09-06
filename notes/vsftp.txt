@@ -22,6 +22,7 @@ pasv_max_port=10102
 pasv_min_port=10100
 pasv_address=vsftp
 pasv_addr_resolve=YES
+background=NO
 
 mkdir -p /var/run/vsftpd/empty
 
@@ -36,3 +37,6 @@ sur la machine qui fera tourner le client
 
 sudo apt-get install yafc
 yafc fle-blay@localhost:4242
+
+apt-get install lftp
+lfpt -u fle-blay -p 4242 localhost
