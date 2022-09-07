@@ -143,6 +143,33 @@ curl https://localhost --insecure
 
 #La conf est dans /etc/nginx
 
+#MAJ ADMINER
+
+curl -L https://www.adminer.org/latest.php -o /var/www/adminer/adminer.php
+vim /etc/nginx/sites-available/default
+
+new conf :
+ajout
+
+v1:
+location = /adminer.php {
+	root			/var/www/adminer;
+	include			fastcgi_params;
+	fastcgi_pass	php-fpm:9000;
+	fastcgi_param	SCRIPT_FILENAME $document_root$fastcgi_script_name;
+}
+
+v2:
+location = /adminer {
+	root			/var/www/adminer;
+	try_files		/adminer.php =500;
+	include			fastcgi_params;
+	fastcgi_pass	php-fpm:9000;
+	fastcgi_param	SCRIPT_FILENAME $document_root$fastcgi_script_name;
+}
+
+nginx -t
+nginx -s reload
 
 
 Nginx : "Engine-x"

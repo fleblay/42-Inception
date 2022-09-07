@@ -20,6 +20,7 @@ services:
       - my_net
     volumes:
       - wp_files:/var/www/html
+      - adminer_files:/var/www/adminer
     ports:
       - "9000:9000"
     command: ["php-fpm7.3", "--nodaemonize"]
@@ -35,6 +36,7 @@ services:
       - my_net
     volumes:
       - wp_files:/var/www/html
+      - adminer_files:/var/www/adminer
     ports:
       - "443:443"
     command: ["nginx", "-g", "daemon off;"]
@@ -78,3 +80,4 @@ networks:
 volumes:
   wp_db:
   wp_files:
+  adminer_files:

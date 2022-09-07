@@ -19,7 +19,7 @@ stop :
 
 #Deletes containers
 down :
-	docker compose down
+	docker compose down -t 5
 
 #Deletes containers AND images AND volumes
 full-down :
