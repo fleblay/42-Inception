@@ -1,0 +1,66 @@
+Node exporter
+
+docker create --name node_exporter --net=rendu_my_net -p 9100:9100 debian:buster /bin/bash -c "while true; do sleep 1; done;"
+docker start node_exporter
+docker exec -ti node_exporter /bin/bash
+
+apt-get update -y && apt-get install -y curl vim procps
+
+#OLD
+curl -L -O https://github.com/prometheus/node_exporter/releases/download/v1.3.1/node_exporter-1.3.1.linux-amd64.tar.gz
+tar xvfz !$:t
+cd !$:r:r
+#OLD
+
+apt-get update -y && apt-get install -y prometheus-node-exporter
+vim /etc/prometheus/prometheus.yml
+derniere ligne :
+	- targets: ['node_exporter:9100']
+prometheus-node-exporter &
+
+(!)
+#volumes a monter en RO et parametres a passer pendant l'exec cf
+https://grafana.com/docs/grafana-cloud/quickstart/docker-compose-linux/
+(!)
+
+
+
+
+
+
+
+Prometheus
+
+docker create --name prometheus --net=rendu_my_net -p 9090:9090 debian:buster /bin/bash -c "while true; do sleep 1; done;"
+docker start prometheus
+docker exec -ti prometheus /bin/bash
+
+#OLD
+apt-get update -y && apt-get install -y curl vim procps
+curl -L -O https://github.com/prometheus/prometheus/releases/download/v2.37.0/prometheus-2.37.0.linux-amd64.tar.gz
+tar xvfz !$:t
+cd !$:r:r
+#OLD
+
+apt-get update -y && apt-get install -y prometheus
+prometheus &
+
+Grafana
+
+docker create --name grafana --net=rendu_my_net -p 3000:3000 debian:buster /bin/bash -c "while true; do sleep 1; done;"
+docker start grafana
+docker exec -ti grafana /bin/bash
+
+apt-get update -y && apt-get install -y vim procps curl
+apt-get install -y gnupg2 curl software-properties-common
+curl https://packages.grafana.com/gpg.key | apt-key add -
+add-apt-repository "deb https://packages.grafana.com/oss/deb stable main"
+
+apt-get update -y && apt-get install -y grafana
+vim /etc/grafana/grafana.ini
+vim /etc/grafana/ldap.toml
+#INI A FAIRE
+
+
+mkdir -p /var/run/grafana
+grafana-server --config=/etc/grafana/grafana.ini --pidfile=/var/run/grafana/grafana-server.pid --homepath=/usr/share/grafana &
