@@ -20,7 +20,6 @@ services:
       - my_net
     volumes:
       - wp_files:/var/www/html
-      - adminer_files:/var/www/adminer
     ports:
       - "9000:9000"
     command: ["php-fpm7.3", "--nodaemonize"]
@@ -70,6 +69,19 @@ services:
       - "4242:21"
       - "10100-10102:10100-10102"
     command: ["/usr/sbin/vsftpd", "/etc/vsftpd.conf"]
+    env_file:
+      - .env
+    restart: on-failure
+  php-fpm-adminer:
+    build: "./php-fpm-adminer"
+    container_name: "php-fpm-adminer"
+    networks:
+      - my_net
+    volumes:
+      - adminer_files:/var/www/adminer
+    ports:
+      - "9001:9001"
+    command: ["php-fpm7.3", "--nodaemonize"]
     env_file:
       - .env
     restart: on-failure

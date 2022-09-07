@@ -160,7 +160,7 @@ location = /adminer.php {
 }
 
 v2:
-location = /adminer {
+location ~ /adminer {
 	root			/var/www/adminer;
 	try_files		/adminer.php =500;
 	include			fastcgi_params;
