@@ -96,7 +96,31 @@ services:
       - /:/rootfs:ro
     ports:
       - "9100:9100"
-    command: ["prometheus-node-exporter", "--path.procfs=/host/proc", "--path.rootfs=/rootfs", "--path.sysfs=/host/sys", '--collector.filesystem.ignored-mount-points=^/\(sys\|proc\|dev\|host\|etc\)']
+    command: ["prometheus-node-exporter", "--path.procfs=/host/proc", "--path.rootfs=/rootfs", "--path.sysfs=/host/sys", '--collector.filesystem.ignored-mount-points=^/\(sys\|proc\|dev\|host\|run\|etc\)', "--log.level=fatal"]
+    env_file:
+      - .env
+    restart: on-failure
+  prometheus:
+    build: "./prometheus"
+    container_name: "prometheus"
+    networks:
+      - my_net
+    volumes:
+      - prometheus_db:/prometheus
+    ports:
+      - "9090:9090"
+    command: ["prometheus", "--config.file=/etc/prometheus/prometheus.yml", "--storage.tsdb.path=/prometheus", "--log.level=error"]
+    env_file:
+      - .env
+    restart: on-failure
+  grafana:
+    build: "./grafana"
+    container_name: "grafana"
+    networks:
+      - my_net
+    ports:
+      - "3000:3000"
+    command: [ "grafana-server", "--config=/etc/grafana/grafana.ini", "--pidfile=/var/run/grafana/grafana-server.pid", "--homepath=/usr/share/grafana" ]
     env_file:
       - .env
     restart: on-failure
@@ -108,3 +132,4 @@ volumes:
   wp_db:
   wp_files:
   adminer_files:
+  prometheus_db:

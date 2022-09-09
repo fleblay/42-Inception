@@ -6,9 +6,9 @@ RUN apt-get update -y && apt-get install -y prometheus-node-exporter
 COPY ./node_exporter.sh /
 RUN chmod a+x /node_exporter.sh
 
-VOLUME /proc
-VOLUME /sys
-VOLUME /
+#VOLUME /proc
+#VOLUME /sys
+#VOLUME /
 EXPOSE 9100
 
 ENTRYPOINT ["/node_exporter.sh"]
