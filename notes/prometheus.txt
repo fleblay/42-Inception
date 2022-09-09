@@ -1,6 +1,6 @@
 Node exporter
 
-docker create --name node_exporter --net=rendu_my_net -p 9100:9100 debian:buster /bin/bash -c "while true; do sleep 1; done;"
+docker create --name node_exporter --net=rendu_my_net -p 9100:9100 -v /proc:/host/proc:ro -v /sys:/host/sys:ro -v /:/rootfs:ro debian:buster /bin/bash -c "while true; do sleep 1; done;"
 docker start node_exporter
 docker exec -ti node_exporter /bin/bash
 
@@ -13,16 +13,15 @@ cd !$:r:r
 #OLD
 
 apt-get update -y && apt-get install -y prometheus-node-exporter
-vim /etc/prometheus/prometheus.yml
-derniere ligne :
-	- targets: ['node_exporter:9100']
-prometheus-node-exporter &
+prometheus-node-exporter --path.procfs=/host/proc --path.rootfs=/rootfs --path.sysfs=/host/sys --collector.filesystem.ignored-mount-points=^/\(sys\|proc\|dev\|host\|etc\) &
 
 (!)
 #volumes a monter en RO et parametres a passer pendant l'exec cf
 https://grafana.com/docs/grafana-cloud/quickstart/docker-compose-linux/
 (!)
 
+Testing conf ok :
+curl http://localhost:9100/metrics | grep "node_"
 
 
 
@@ -31,19 +30,41 @@ https://grafana.com/docs/grafana-cloud/quickstart/docker-compose-linux/
 
 Prometheus
 
-docker create --name prometheus --net=rendu_my_net -p 9090:9090 debian:buster /bin/bash -c "while true; do sleep 1; done;"
+docker create --name prometheus --net=rendu_my_net -p 9090:9090 -v prometheus_db:/prometheus debian:buster /bin/bash -c "while true; do sleep 1; done;"
 docker start prometheus
 docker exec -ti prometheus /bin/bash
 
+
+#Utiliser plutot version a jour avec curl
+apt-get update -y && apt-get install -y prometheus vim procps
+
+
+Faire le OLD pour avoir une version a jour de prometheus
 #OLD
 apt-get update -y && apt-get install -y curl vim procps
 curl -L -O https://github.com/prometheus/prometheus/releases/download/v2.37.0/prometheus-2.37.0.linux-amd64.tar.gz
+#curl -L https://github.com/prometheus/prometheus/releases/latest -o /prometheus.tar.gz
 tar xvfz !$:t
-cd !$:r:r
+#cd !$:r:r
+mv !$:r:r/prometheus /usr/bin/
 #OLD
 
-apt-get update -y && apt-get install -y prometheus
-prometheus &
+
+
+#A copier avec un fichier
+vim /etc/prometheus/prometheus.yml
+derniere ligne :
+	- targets: ['node_exporter:9100']
+
+enlever le alerting
+
+prometheus --config.file=/etc/prometheus/prometheus.yml --storage.tsdb.path=/prometheus &
+
+
+
+
+
+
 
 Grafana
 
@@ -52,15 +73,63 @@ docker start grafana
 docker exec -ti grafana /bin/bash
 
 apt-get update -y && apt-get install -y vim procps curl
+
 apt-get install -y gnupg2 curl software-properties-common
 curl https://packages.grafana.com/gpg.key | apt-key add -
 add-apt-repository "deb https://packages.grafana.com/oss/deb stable main"
-
 apt-get update -y && apt-get install -y grafana
-vim /etc/grafana/grafana.ini
+
+#vim /etc/grafana/grafana.ini
+#uncomment provisioning = conf/provisioning
+
+#A copier
+vim /usr/share/grafana/conf/provisioning/datasources/prom.yaml
+Ajouter
+
+apiVersion: 1
+ 
+datasources:
+  - name: Prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus:9090
+
+
+Ajouter le fichier .json suivant de dashboard :
+
+curl -L https://grafana.com/api/dashboards/1860/revisions/1/download -o node_exporter_full.json
+mv node_exporter_full.json /usr/share/grafana/conf/provisioning/dashboards
+
+#On enleve
+vim usr/share/grafana/conf/provisioning/dashboards/dashboard.yaml
+Ajouter
+
+apiVersion: 1
+
+providers:
+  - name: 'Default'
+    folder: 'Services'
+    options:
+      path: /usr/share/grafana/conf/provisioning/dashboards
+
+Ajouter v2 :
+
+apiVersion: 1
+
+providers:
+  - name: 'Prometheus'
+    orgId: 1
+    folder: ''
+    type: file
+    disableDeletion: false
+    editable: true
+    allowUiUpdates: true
+    options:
+      path: /usr/share/grafana/conf/provisioning/dashboards
+
 vim /etc/grafana/ldap.toml
 #INI A FAIRE
 
-
 mkdir -p /var/run/grafana
 grafana-server --config=/etc/grafana/grafana.ini --pidfile=/var/run/grafana/grafana-server.pid --homepath=/usr/share/grafana &
+#skipping plugin ??
