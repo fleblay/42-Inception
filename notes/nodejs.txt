@@ -1,10 +1,24 @@
+docker create --name nodejs --net=rendu_my_net -p 8080:8080 -v nodejs_maps:/maps debian:buster /bin/bash -c "while true; do sleep 1; done;"
+docker start nodejs
+docker exec -ti nodejs /bin/bash
+
 #install node js
-apt-get update -y && apt-get install -y nodejs
+apt-get update -y && apt-get install -y nodejs npm
+
+#cp files
+cp ./solong_files.tar /
+
+#extract files
+tar xvf solong_files.tar --strip-components=1
+
+npm install
+
+npm start
 
 #Deja fait avant. Importer le package.json
-npm init
-npm i -S express
-npm i -S ejs
+#npm init
+#npm i -S express
+#npm i -S ejs
 
 #utiliser le nodemon
 npm i -S nodemon

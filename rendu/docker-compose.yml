@@ -124,6 +124,18 @@ services:
     env_file:
       - .env
     restart: on-failure
+  nodejs:
+    build:
+      context: "./nodejs"
+    container_name: "nodejs"
+    networks:
+      - my_net
+    volumes:
+      - nodejs_maps:/maps
+    ports:
+      - "8080:8080"
+    command: ["npm", "start"]
+    restart: on-failure
 
 networks:
   my_net:
@@ -133,3 +145,4 @@ volumes:
   wp_files:
   adminer_files:
   prometheus_db:
+  nodejs_maps:

@@ -15,11 +15,11 @@ build :
 
 #Only stops containers
 stop :
-	docker compose stop -t 3
+	docker compose stop -t 5
 
 #Deletes containers
 down :
-	docker compose down -t 3
+	docker compose down -t 5
 
 #Deletes containers AND images AND volumes
 full-down :
