@@ -46,5 +46,6 @@ Changer la resolution de la machine :
 1.sur le bandeau de la VM : File->preference->display->Maximum_Guest_Screen : NONE
 2.Dans la vm : screen -> 1024*768
 
-Change settings processeurs a 4
-
+##Port forwarding :
+##VM->settings->network->adapter->advanced->port-forwarding
+##Host/host_port/Guest/guest_port : 127.0.0.1/42000/127.0.0.1/443
