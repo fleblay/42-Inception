@@ -1,0 +1,50 @@
+Dl xubuntu iso depuis site
+Creation VM sur virtualBox
+login/user : inception/inception
+
+Dans la VM :
+
+sudo su
+apt-get update -y && apt-get -y install lftp curl virtualbox-guest-utils make
+curl -fsSL https://get.docker.com -o get-docker.sh
+sh get-docker.sh
+
+Change volume location :
+
+vi /lib/systemd/system/docker.service
+Changer la ligne :
+ExecStart=/usr/bin/dockerd -H .....
+par :
+ExecStart=/usr/bin/docker --data-root /home/fle-blay/data/ -H...
+mkdir /home/fle-blay/data
+systemctl daemon-reload
+service docker restart
+
+Change du host
+vi /etc/hosts
+ajouter sous 127.0.0.1 localhost
+127.0.0.1 fle-blay.42.fr
+
+Prevent fire-fox to redirect http to https :
+Dans la barre de recherche firefox : about:config
+changer browser.urlbar.autoFill a false
+clear all in browser history (check all boxes)
+restart firefox
+
+Ajout du shared folder sous virtualBox :
+Machine->settings/shared-folders
+add folder-path, folder-name and check auto-mount
+ls /media/ pour le trouver
+#OPTIONEL mount -t vboxsf test_dir ~/test_dir_folder
+ajout du username au group virtual box :
+usermod -aG vboxsf fle-blay
+#OU
+#adduser $USER vboxsf
+Puis restart de la machine
+
+Changer la resolution de la machine :
+1.sur le bandeau de la VM : File->preference->display->Maximum_Guest_Screen : NONE
+2.Dans la vm : screen -> 1024*768
+
+Change settings processeurs a 4
+
