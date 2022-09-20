@@ -2,31 +2,6 @@ let inputMove = document.getElementById("input-move");
 window.addEventListener("keydown", (event) => {
 	if (event.defaultPrevented)
 		return ;
-	/*
-	setTileColor(`${player_y}.${player_x}`, "white");
-	switch (event.key){
-		case "ArrowDown":
-			player_y += player_y < 9 ? 1 : 0;
-			inputMove.innerHTML = "DOWN";
-			break;
-		case "ArrowUp":
-			player_y -= player_y > 0 ? 1 : 0;
-			inputMove.innerHTML = "UP";
-			break;
-		case "ArrowLeft":
-			player_x -= player_x > 0 ? 1 : 0;
-			inputMove.innerHTML = "LEFT";
-			break;
-		case "ArrowRight":
-			player_x += player_x < 9 ? 1 : 0;
-			inputMove.innerHTML = "RIGHT";
-			break;
-		default :
-			return;
-	}
-	inputMove.innerHTML += ` ${player_x}:${player_y}`;
-	setTileColor(`${player_y}.${player_x}`, "red");
-	*/
 	tryMove(event.key);
 	event.preventDefault();
 }, true);
@@ -40,6 +15,7 @@ for (let i = 0; i < 10; i++)
 		map_tile_id.push(str);
 	}
 }
+
 
 function create_maze(table_elem, size)
 {
@@ -65,7 +41,20 @@ function set_maze_color(load_map)
 		for (let j = 0; j < load_map[i].length; j++)
 		{
 			if (load_map[i][j] == "1")
-				document.getElementById(`tile-${i}.${j}`).style.backgroundColor = "black";
+				document.getElementById(`tile-${i}.${j}`).classList.add("wall");
+			if (load_map[i][j] == "C")
+				document.getElementById(`tile-${i}.${j}`).classList.add("chest");
+			if (load_map[i][j] == "E")
+				document.getElementById(`tile-${i}.${j}`).classList.add("exit");
+			if (load_map[i][j] == "P")
+			{
+				document.getElementById(`tile-${i}.${j}`).classList.add("hero");
+				player_y = i;
+				player_x = j;
+
+			}
+			else
+				document.getElementById(`tile-${i}.${j}`).classList.add("floor");
 		}
 	}
 }
@@ -73,6 +62,29 @@ function set_maze_color(load_map)
 function setTileColor(position, color)
 {
 	document.getElementById("tile-" + position).style.backgroundColor = color;
+}
+
+function setTileClass(position, class_name)
+{
+	document.getElementById("tile-" + position).classList.add(class_name);
+}
+
+function removeTileClass(position, class_name)
+{
+	document.getElementById("tile-" + position).classList.remove(class_name);
+}
+
+function noMoreCollectibles(load_map)
+{
+	for (let i = 0; i < load_map.length; i++)
+	{
+		for (let j = 0; j < load_map[i].length; j++)
+		{
+			if (load_map[i][j] == "C")
+				return (0);
+		}
+	}
+	return (1);
 }
 
 function tryMove(move)
@@ -105,18 +117,33 @@ function tryMove(move)
 		|| new_player_y > 9
 		|| load_map[new_player_y][new_player_x] == "1")
 		return ;
-	setTileColor(`${player_y}.${player_x}`, "white");
+	if (load_map[new_player_y][new_player_x] == "E" && noMoreCollectibles(load_map) == 0)
+	{
+		document.getElementById("win").innerHTML = "You left some colletibles STUPID !";
+		return ;
+	}
+	removeTileClass(`${player_y}.${player_x}`, "hero");
+	setTileClass(`${player_y}.${player_x}`, "floor");
+	load_map[player_y][player_x] = "0";
 	player_x = new_player_x;
 	player_y = new_player_y;
 	inputMove.innerHTML += ` ${player_x}:${player_y}`;
-	setTileColor(`${player_y}.${player_x}`, "red");
+
+	setTileClass(`${player_y}.${player_x}`, "hero");
+	if (load_map[new_player_y][new_player_x] == "C")
+		removeTileClass(`${player_y}.${player_x}`, "chest");
+	else if (load_map[new_player_y][new_player_x] == "E")
+	{
+		removeTileClass(`${player_y}.${player_x}`, "exit");
+		document.getElementById("win").innerHTML = "YOU WIN";
+		document.getElementById("map").style.visibility = "hidden";
+	}
 }
 
-let player_x = 5;
-let player_y = 5;
+let player_x = -1;
+let player_y = -1;
 
 create_maze(document.getElementById("map"), 10);
 set_maze_color(load_map);
-setTileColor(`${player_y}.${player_x}`, "red");
 
 console.log(load_map);
