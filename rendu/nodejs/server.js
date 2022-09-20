@@ -1,29 +1,34 @@
-let http = require('http');
-let fs = require('fs');
+const express = require('express');
+const app = express();
+const fs = require('fs');
 
-http.createServer((request, response) => {
-	fs.readFile('index.html', 'utf-8', (err, data) => {
-		if (err) {
-			response.writeHead(404, {
-				'Content-type' : 'text/html; charset=utf-8'
-			});
-			response.write("Oupsie, impossible de lire le fichier\n");
-		} else {
+let mapArray = [];
+mapArray.push(fs.readFileSync("./map_1.txt", "utf-8"));
+mapArray.push(fs.readFileSync("./map_2.txt", "utf-8"));
+mapArray.push(fs.readFileSync("./map_3.txt", "utf-8"));
 
-			response.writeHead(200, {
-				'Content-type' : 'text/html; charset=utf-8'
-			});
-			/*
-			fs.readFile('index.js', 'utf-8', (err2, data2) => {
-				if (err) throw err;
-				else {
-					data = data.replace("/<script>.*$/", data2);
-					console.log(data2);
-				}
-			});
-			*/
-			response.write(data);
-		}
-		response.end();
-	});
-}).listen(8080);
+function getMap(mapArray)
+{
+	map = mapArray[Math.floor(Math.random() * 3)];
+	map = map.trim("\n").split("\n");
+	let split_map = [];
+
+	for (let map_index of map)
+		split_map.push(map_index.split(''));
+
+	console.log(split_map);
+	return (split_map);
+}
+
+
+app.set('view engine', 'ejs');
+app.use('/assets', express.static('public'));
+
+app.get('/', (request, response) => {
+	response.render('pages/index', {
+		test : 'Hello',
+		map : JSON.stringify(getMap(mapArray))
+		});
+});
+
+app.listen(8080);

@@ -1,0 +1,22 @@
+#input-move
+{
+	color : green;
+}
+
+#dont_panic
+{
+	width : 512px;
+	height : auto;
+}
+
+table
+{
+	border-collapse : collapse;
+}
+
+td
+{
+	width : 40px;
+	height : 40px;
+	border : 1px solid black;
+}

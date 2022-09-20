@@ -1,0 +1,19 @@
+#install node js
+apt-get update -y && apt-get install -y nodejs
+
+#Deja fait avant. Importer le package.json
+npm init
+npm i -S express
+npm i -S ejs
+
+#utiliser le nodemon
+npm i -S nodemon
+remplacer npm par nodemon dans package.json
+
+#deja fait durant init
+Creer arbo
+
+#importer le dossier et le contenu
+
+Faire npm i pour recuperer les packages
+npm start
