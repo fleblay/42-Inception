@@ -5,25 +5,25 @@ ALL_NETWORK			:= $(shell docker network ls --filter type=custom -q)
 ALL_IMG				:= $(shell docker images -q)
 
 all :
-	docker compose up &
+	docker compose up -f ./srcs &
 
 attach :
-	docker compose up
+	docker compose up -f ./srcs
 
 build :
-	docker compose build
+	docker compose build -f ./srcs
 
 #Only stops containers
 stop :
-	docker compose stop -t 5
+	docker compose stop -t 5 -f ./srcs
 
 #Deletes containers
 down :
-	docker compose down -t 5
+	docker compose down -t 5 -f ./srcs
 
 #Deletes containers AND images AND volumes
 full-down :
-	docker compose down --rmi all --volumes
+	docker compose down --rmi all --volumes -f ./srcs
 
 #Deletes containers AND images AND volumes AND cache to force recreate images from scratch
 fullfull-down : full-down

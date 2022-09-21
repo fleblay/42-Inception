@@ -36,8 +36,10 @@ Machine->settings/shared-folders
 add folder-path, folder-name and check auto-mount
 ls /media/ pour le trouver
 #OPTIONEL mount -t vboxsf test_dir ~/test_dir_folder
-ajout du username au group virtual box :
+ajout du username au group virtual box (pour lire les fichiers) et docker (pour lancer docker):
 usermod -aG vboxsf fle-blay
+#usermod -aG root fle-blay
+usermod -aG docker fle-blay
 #OU
 #adduser $USER vboxsf
 Puis restart de la machine
