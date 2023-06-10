@@ -57,8 +57,26 @@ The docker-compose file will start the following containers :
   <li>
     Redis Cache : Cache for requests on the website pages. Its role is to speed up the reponse time. Because DB queries and php rendering can be quite long, Redis will store in RAM (and optionnaly on disk) the results of the client requests. If 2 similar requests happen in a short time range, the first one will be treated normally (php + MariaDB), but the second one will be served by Redis, with a copy of the result of the first request.
   </li>
-  
-  
+  <li>
+    VSFTP : FTP server for updating the Worpress Website files. It provides a simple way (with a ftp client) to modify and update the website content without the need to have acces to the Virtual Machine filesystem.
+  </li>
+  <li>
+    Monitoring system : Node_exporter / Prometheus / Grafana. It provides a monitoring interface with metrics (CPU usage, RAM usage, HDD access) of the Virtual Machine running the containers. It is built on top of 3 containers :
+    <ul>
+      <li>
+        Node_exporter : Periodically collects info on ressources usage of the VM and sends them to Prometheus.
+      </li>
+      <li>
+        Prometheus : Gathers info from node_exporter and stores them in a Database. Gives access to current VM info and history to clients, such as Grafana
+      </li>
+      <li>
+        Grafana : Webinterface for reading the VM metrics. It is mainly a dashboard displaying the infos from Prometheus in a user friendly manner. It is accessible through port 3000
+      </li>
+    </ul>
+  </li>
+  <li>
+    NodeJS : FTP server built with ExpressJS framework on the NodeJS environment. Serves the Personal Website files (completely different from the WordPress one)
+  </li>
 </ul>
 
 ### Schematics and Diagrams
