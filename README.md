@@ -28,7 +28,7 @@ The following services will be running :
     Each DockerFile has to be created from scratch : no using DockerFiles from dockerhub
   </li>
   <li>
-    The whole project has to start using ```sh Make``` . This means the project structure must rely on :
+    The whole project has to start using Make. This means the project structure must rely on :
     <ul>
       <li>A Makefile on top of...</li>
       <li>A docker-compose file using various...</li>
@@ -41,6 +41,25 @@ The following services will be running :
 </ul>
 
 ## Implemented Solution
+
+The docker-compose file will start the following containers :
+
+<ul>
+  <li>
+    NGINX : Main ingress point of the infrastructure. Listen https requests on port 443 and proxy passes them to the ad-hoc services. The main goal is to treat requests on .php files for the wordpress website, and send back php-fpm response to the client
+  </li>
+   <li>
+    PHP-FPM : Processes .php files and send back the result. The main goal is to listen for GET/POST requests on the Wordpress .php files, process them and send the result back to NGINX. 
+  </li>
+     <li>
+    MariaDB : Database server in charge of storing and retrieving data for the Website (users's posts, images...) 
+  </li>
+  <li>
+    Redis Cache : Cache for requests on the website pages. Its role is to speed up the reponse time. Because DB queries and php rendering can be quite long, Redis will store in RAM (and optionnaly on disk) the results of the client requests. If 2 similar requests happen in a short time range, the first one will be treated normally (php + MariaDB), but the second one will be served by Redis, with a copy of the result of the first request.
+  </li>
+  
+  
+</ul>
 
 ### Schematics and Diagrams
 <p align="center">
