@@ -80,15 +80,36 @@ The docker-compose file will start the following containers :
 </ul>
 
 ### Schematics and Diagrams
+
 <p align="center">
   <img src="./doc/Inception.svg" width="100%">
 </p>
+
 ## Usage
 
 ### Dependencies
 
+First and foremost, make sure you have the following packages installed on your machine :
+
+<ul>
+  <li>Docker</li>
+  <li>Make</li>
+</ul>
+
 ### Install
 
+Clone the repo on your machine and go to project directory :
+
+```console
+  git clone https://github.com/fleblay/42-Inception && cd !#:2:t
+```
+
+Lauch the docker infra using the Makefile provided :
+
+```console
+  make
+```
+Access the Website 
 ## ROX (Return On Experience)
 
 ### Knowledge acquired during this project
