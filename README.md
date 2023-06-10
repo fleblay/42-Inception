@@ -11,7 +11,9 @@ Final Grade
 ## Implemented Solution
 
 ### Schematics and Diagrams
-
+<p align="center">
+  <img src="./doc/Inception.svg" width="100%">
+</p>
 ## Usage
 
 ### Dependencies
