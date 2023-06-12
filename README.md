@@ -121,9 +121,44 @@ Note : You might have to tweak your browser to access it because the SSL certifi
     Docker :
     <ul>
       <li>
-      Creating and running containers using prebuilt images from the hub
+		Running containers using prebuilt images from the hub
+      </li>
+      <li>
+		Creating custom images with DockerFiles following Docker best practices (PID 1, using the build cache correctly, CMD versus ENTRYPOINT commands...
+      </li>
+      <li>
+		Setting up volumes and networks between the HOST and the containers to allow them to communicate and read/write data to the filesystem
+      </li>
+      <li>
+		Deploying a complete infrastructure with the Docker Compose and the yaml files
+      </li>
+      <li>
+		Improving knowledge on NGINX configuration files
       </li>
     </ul>
+  </li>
+  <li>
+	Learning the basics of SQL and how to send queries using the CLI client
+  </li>
+  <li>
+	Learning how to setup a working website from scratch :
+    <ul>
+      <li>
+			Generating a SSL certificate
+		</li>
+		<li>
+			Setting up the route to proxy_pass requests to the CGI/FastCGI
+		</li>
+		<li>
+			Creating a Database with access and running a DB Client (mysqld)
+        </li>
+	</ul>
+  </li>
+  <li>
+    Adding a monitoring system to a docker stack with node_exporter, Prometheus and Grafana
+  </li>
+  <li>
+  	Learning the basis of Javascript for frontend and backend (nodeJS/Express) web development
   </li>
 </ul>
 
