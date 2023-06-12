@@ -145,7 +145,7 @@ Note : You might have to tweak your browser to access it because the SSL certifi
     <ul>
       <li>
 			Generating a SSL certificate
-		</li>
+</li>
 		<li>
 			Setting up the route to proxy_pass requests to the CGI/FastCGI
 		</li>
@@ -163,3 +163,12 @@ Note : You might have to tweak your browser to access it because the SSL certifi
 </ul>
 
 ### Challenges faced
+
+<ul>
+	<li>
+		Working with the differences between the MACOS and Linux version of Docker
+	</li>
+	<li>
+		Recreating my own version of the official images of NGINX, MariaDB, PHP-FPM was time consuming (but greatly increased my ease with DockerFiles along with my knowledge of how thoses services work). Same goes for the Monitoring stack (Grafana/Prometheus/node_exporter)
+	</li>
+	</ul>
