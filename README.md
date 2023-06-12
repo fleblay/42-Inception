@@ -109,9 +109,22 @@ Lauch the docker infra using the Makefile provided :
 ```console
   make
 ```
-Access the Website 
+Access the Website on <a href="https://localhost:443">localhost</a>
+Note : You might have to tweak your browser to access it because the SSL certificate is self-signed.
+
 ## ROX (Return On Experience)
 
 ### Knowledge acquired during this project
+
+<ul>
+  <li>
+    Docker :
+    <ul>
+      <li>
+      Creating and running containers using prebuilt images from the hub
+      </li>
+    </ul>
+  </li>
+</ul>
 
 ### Challenges faced
